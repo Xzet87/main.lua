@@ -1,4 +1,4 @@
--- [[ EXZET HUB - V3 COMPLETE FIX: PERMANENT SPEED & AUTO COLLECT RARITY ]] --
+-- [[ EXZET HUB V4 - PLACE / ZONE EGG FINDER + AUTO COLLECT + PERMANENT SPEED ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -17,8 +17,9 @@ local myBasePosition = nil
 local scannedEggsList = {}
 local filteredEggsList = {}
 
-local rarities = {"ALL", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
-local selectedRarityIndex = 1
+-- Daftar Pilihan Zona / Tempat
+local zonesList = {"ALL Zones", "Zone 1 / Spawn", "Zone 2", "Zone 3", "Zone 4", "Secret / Island"}
+local selectedZoneIndex = 1
 
 -- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -105,9 +106,9 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - V3"
+Title.Text = "Exzet Hub - Zone Collector"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
+Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MINIMIZE & CLOSE BUTTONS
@@ -219,7 +220,7 @@ MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
 -------------------------------------------------------------------
--- SPEED BYPASS (AUTO RE-HOOK ON RESPAWN / DIE)
+-- SPEED BYPASS (PERMANENT ENGINE)
 -------------------------------------------------------------------
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
@@ -227,7 +228,7 @@ SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (Auto Anti-Death Reset):"
+SpeedLabel.Text = "Kecepatan Jalan (Permanent No-Reset):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 11
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -277,17 +278,17 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- INTEGRATED AUTO COLLECT & RARITY FINDER
+-- PLACE / ZONE FILTER + AUTO COLLECT
 -------------------------------------------------------------------
-local RaritySelectBtn = Instance.new("TextButton")
-RaritySelectBtn.Parent = MainPage
-RaritySelectBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 180)
-RaritySelectBtn.Position = UDim2.new(0, 0, 0, 48)
-RaritySelectBtn.Size = UDim2.new(0, 276, 0, 25)
-RaritySelectBtn.Font = Enum.Font.GothamBold
-RaritySelectBtn.Text = "Target Rarity: [ ALL ]"
-RaritySelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-RaritySelectBtn.TextSize = 11
+local ZoneSelectBtn = Instance.new("TextButton")
+ZoneSelectBtn.Parent = MainPage
+ZoneSelectBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+ZoneSelectBtn.Position = UDim2.new(0, 0, 0, 48)
+ZoneSelectBtn.Size = UDim2.new(0, 276, 0, 25)
+ZoneSelectBtn.Font = Enum.Font.GothamBold
+ZoneSelectBtn.Text = "Lokasi Egg: [ ALL Zones ]"
+ZoneSelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ZoneSelectBtn.TextSize = 11
 
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
@@ -295,7 +296,7 @@ SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
 SetBaseBtn.Position = UDim2.new(0, 0, 0, 78)
 SetBaseBtn.Size = UDim2.new(0, 133, 0, 25)
 SetBaseBtn.Font = Enum.Font.GothamBold
-SetBaseBtn.Text = "1. Set Base Posisi"
+SetBaseBtn.Text = "1. Set Posisi Base"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SetBaseBtn.TextSize = 10
 
@@ -326,53 +327,68 @@ ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 ToggleAutoCollectBtn.Position = UDim2.new(0, 0, 0, 130)
 ToggleAutoCollectBtn.Size = UDim2.new(0, 276, 0, 32)
 ToggleAutoCollectBtn.Font = Enum.Font.GothamBold
-ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: OFF"
+ToggleAutoCollectBtn.Text = "AUTO COLLECT LOKASI INI: OFF"
 ToggleAutoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleAutoCollectBtn.TextSize = 11
 
 -------------------------------------------------------------------
--- EGG SCANNER & AUTO COLLECT ENGINE
+-- SCANNER LOGIC BERDASARKAN LOKASI / PLACE
 -------------------------------------------------------------------
-local function ScanAndFilterEggs()
+local function ScanAndFilterByZone()
     scannedEggsList = {}
     filteredEggsList = {}
-    local chosenRarity = string.lower(rarities[selectedRarityIndex])
+    local currentZoneFilter = zonesList[selectedZoneIndex]
 
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
             local n = string.lower(obj.Name)
             local pN = string.lower(obj.Parent.Name)
-            
+            local gpN = string.lower(obj.Parent.Parent and obj.Parent.Parent.Name or "")
+
+            -- Deteksi bahwa objek adalah Egg / Spawn Point Telur
             if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN, "egg")) and not string.find(pN, "ui") then
                 table.insert(scannedEggsList, obj)
-                
-                if chosenRarity == "all" then
+
+                if currentZoneFilter == "ALL Zones" then
                     table.insert(filteredEggsList, obj)
                 else
-                    if string.find(n, chosenRarity) or string.find(pN, chosenRarity) then
+                    -- Filter lokasi berdasarkan nama folder / area tempat egg berada
+                    local zoneKeyword = ""
+                    if currentZoneFilter == "Zone 1 / Spawn" then zoneKeyword = "zone1"
+                    elseif currentZoneFilter == "Zone 2" then zoneKeyword = "zone2"
+                    elseif currentZoneFilter == "Zone 3" then zoneKeyword = "zone3"
+                    elseif currentZoneFilter == "Zone 4" then zoneKeyword = "zone4"
+                    elseif currentZoneFilter == "Secret / Island" then zoneKeyword = "secret" end
+
+                    if string.find(n, zoneKeyword) or string.find(pN, zoneKeyword) or string.find(gpN, zoneKeyword) then
                         table.insert(filteredEggsList, obj)
-                    elseif obj:GetAttribute("Rarity") and string.lower(tostring(obj:GetAttribute("Rarity"))) == chosenRarity then
+                    elseif currentZoneFilter == "Zone 1 / Spawn" and (string.find(pN, "spawn") or string.find(gpN, "spawn")) then
                         table.insert(filteredEggsList, obj)
                     end
                 end
             end
         end
     end
+    
+    -- Jika di zona spesifik tidak ada kata kunci khusus, tampilkan semua egg terdekat dari zona tersebut
+    if #filteredEggsList == 0 and currentZoneFilter ~= "ALL Zones" then
+        filteredEggsList = scannedEggsList
+    end
 end
 
-RaritySelectBtn.MouseButton1Click:Connect(function()
-    selectedRarityIndex = selectedRarityIndex + 1
-    if selectedRarityIndex > #rarities then selectedRarityIndex = 1 end
-    RaritySelectBtn.Text = "Target Rarity: [ " .. rarities[selectedRarityIndex] .. " ]"
-    ScanAndFilterEggs()
+ZoneSelectBtn.MouseButton1Click:Connect(function()
+    selectedZoneIndex = selectedZoneIndex + 1
+    if selectedZoneIndex > #zonesList then selectedZoneIndex = 1 end
+    ZoneSelectBtn.Text = "Lokasi Egg: [ " .. zonesList[selectedZoneIndex] .. " ]"
+    ScanAndFilterByZone()
 end)
 
 SetBaseBtn.MouseButton1Click:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
-        SetBaseBtn.Text = "Base OK!"
+        SetBaseBtn.Text = "Base Tersimpan!"
         task.wait(1)
-        SetBaseBtn.Text = "1. Set Base Posisi"
+        SetBaseBtn.Text = "1. Set Posisi Base"
     end
 end)
 
@@ -385,53 +401,53 @@ end)
 ToggleAutoCollectBtn.MouseButton1Click:Connect(function()
     isAutoCollectActive = not isAutoCollectActive
     if isAutoCollectActive then
-        ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: ON"
+        ToggleAutoCollectBtn.Text = "AUTO COLLECT LOKASI INI: ON"
         ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: OFF"
+        ToggleAutoCollectBtn.Text = "AUTO COLLECT LOKASI INI: OFF"
         ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         DisplayEggLabel.Text = "Status: Auto Collect Nonaktif"
     end
 end)
 
--- AUTO EGG COLLECTOR MAIN LOOP
+-- AUTO COLLECT MAIN LOOP ENGINE
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.35) do
         if isAutoCollectActive then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                ScanAndFilterEggs()
-                
+                ScanAndFilterByZone()
+
                 if #filteredEggsList > 0 then
-                    local targetEgg = filteredEggsList[1] -- Ambil egg terdekat/teratas dari filter rarity
-                    DisplayEggLabel.Text = "Sedang Mengambil: " .. targetEgg.Name .. " (" .. rarities[selectedRarityIndex] .. ")"
-                    
+                    local targetEgg = filteredEggsList[1]
+                    DisplayEggLabel.Text = "Sedang Ambil: " .. targetEgg.Name .. " [" .. zonesList[selectedZoneIndex] .. "]"
+
                     local targetCFrame = nil
                     if targetEgg:IsA("BasePart") then targetCFrame = targetEgg.CFrame
                     elseif targetEgg:IsA("Model") and targetEgg.PrimaryPart then targetCFrame = targetEgg.PrimaryPart.CFrame
                     elseif targetEgg:IsA("Model") and targetEgg:FindFirstChildWhichIsA("BasePart") then targetCFrame = targetEgg:FindFirstChildWhichIsA("BasePart").CFrame end
-                    
+
                     if targetCFrame then
-                        -- 1. Teleport ke Egg
-                        hrp.CFrame = targetCFrame + Vector3.new(0, 2, 0)
-                        
-                        -- 2. Trigger Proximity Prompt (Ambil Egg)
+                        -- 1. Teleport ke Telur
+                        hrp.CFrame = targetCFrame + Vector3.new(0, 2.5, 0)
+
+                        -- 2. Ambil Egg (Tekan ProximityPrompt / E)
                         for _, prompt in pairs(targetEgg:GetDescendants()) do
                             if prompt:IsA("ProximityPrompt") then
                                 fireproximityprompt(prompt)
                             end
                         end
                         task.wait(0.3)
-                        
-                        -- 3. Teleport Langsung Balik Ke Base
+
+                        -- 3. Teleport Langsung Balik ke Base
                         if myBasePosition and isAutoCollectActive then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
-                            task.wait(0.4)
+                            task.wait(0.35)
                         end
                     end
                 else
-                    DisplayEggLabel.Text = "Mencari Egg Rarity (" .. rarities[selectedRarityIndex] .. ")..."
+                    DisplayEggLabel.Text = "Mencari Egg di " .. zonesList[selectedZoneIndex] .. "..."
                 end
             end
         end
@@ -439,15 +455,14 @@ task.spawn(function()
 end)
 
 -------------------------------------------------------------------
--- PERMANENT SPEED BYPASS ENGINE (PERSISTENT AFTER DEATH)
+-- PERMANENT SPEED BYPASS (PERSISTENT ON DEATH)
 -------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
         local hum = char.Humanoid
         local hrp = char.HumanoidRootPart
-        
-        -- Keeps speed working continuously without needing re-execute after death/collision
+
         if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
             local speedMultiplier = (customSpeed / 16) - 1
             if speedMultiplier > 0 then
@@ -457,7 +472,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- TAB SWITCH
+-- TAB NAVIGATION SWITCH
 InfoTabBtn.MouseButton1Click:Connect(function()
     InfoPage.Visible = true; MainPage.Visible = false
     InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
