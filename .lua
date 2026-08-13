@@ -1,4 +1,4 @@
--- [[ EXZET HUB UI SCRIPT ]] --
+-- [[ EXZET HUB UI SCRIPT - REVISED ]] --
 
 local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jensonhirst/Orion/main/source'))()
 
@@ -14,54 +14,15 @@ local Window = OrionLib:MakeWindow({
 })
 
 -------------------------------------------------------------------
--- CUSTOMIZATION: Warna Red-Black Gradient & Transparansi UI
--------------------------------------------------------------------
-local CoreGui = game:GetService("CoreGui")
-task.spawn(function()
-    task.wait(0.5) -- Tunggu UI ter-load sepenuhnya
-    
-    -- Mencari UI Orion di CoreGui
-    local OrionUI = CoreGui:FindFirstChild("Orion") or CoreGui:FindFirstChild("OrionLibrary")
-    if OrionUI then
-        for _, v in pairs(OrionUI:GetDescendants()) do
-            -- Mengubah Frame utama menjadi semi-transparan dengan tema Hitam & Merah
-            if v:IsA("Frame") or v:IsA("ScrollingFrame") then
-                v.BackgroundTransparency = 0.35 -- Transparansi background
-                
-                -- Memberikan warna dasarnya hitam/gelap
-                if v.BackgroundColor3 == Color3.fromRGB(25, 25, 25) or v.BackgroundColor3 == Color3.fromRGB(35, 35, 35) then
-                    v.BackgroundColor3 = Color3.fromRGB(15, 0, 0) -- Hitam ke-merahan
-                end
-            end
-            
-            -- Menyesuaikan border / stroke warna merah terang
-            if v:IsA("UIStroke") then
-                v.Color = Color3.fromRGB(220, 20, 60) -- Merah crimson
-            end
-            
-            -- Menyesuaikan warna gradasi jika ada
-            if v:IsA("UIGradient") then
-                v.Color = ColorSequence.new{
-                    ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 0, 0)), -- Merah
-                    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 10))  -- Hitam
-                }
-            end
-        end
-    end
-end)
-
--------------------------------------------------------------------
 -- NAVIGATION TABS
 -------------------------------------------------------------------
 
--- Tab Info
 local InfoTab = Window:MakeTab({
     Name = "Info",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
--- Tab Main (Kosong)
 local MainTab = Window:MakeTab({
     Name = "Main",
     Icon = "rbxassetid://4483345998",
@@ -78,12 +39,12 @@ InfoTab:AddSection({
 
 InfoTab:AddLabel("Pembuat: exzet")
 
-InfoTab:AddParagraph("Discord Community", "Join Discord resmi kami untuk mendapatkan link script terbaru dan update mendatang!")
+InfoTab:AddParagraph("Discord Community", "Join Discord resmi kami untuk mendapatkan link script terbaru!")
 
 InfoTab:AddButton({
     Name = "Salin Link Discord",
     Callback = function()
-        setclipboard("https://discord.gg/yourlinkhere") -- Ganti dengan link Discord kamu
+        setclipboard("https://discord.gg/yourlinkhere") -- Ganti link Discord di sini
         OrionLib:MakeNotification({
             Name = "Sukses!",
             Content = "Link Discord berhasil disalin ke clipboard!",
@@ -104,78 +65,120 @@ MainTab:AddSection({
 MainTab:AddLabel("Fitur akan ditambahkan di sini...")
 
 -------------------------------------------------------------------
--- MINIMIZE LOGO (XZ) & TOMBOL CLOSE CONFIRMATION
+-- MINIMIZE SYSTEM (KOTAK XZ SAJA) & GRADIENT RED-BLACK
 -------------------------------------------------------------------
 
--- Membuat ScreenGui terpisah untuk Logo Minimize 'XZ'
+local CoreGui = game:GetService("CoreGui")
+
+-- Membuat Tombol Floating Box XZ untuk Minimize
 local MinimizeGui = Instance.new("ScreenGui")
 local MinimizeBtn = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
+local UIGradient = Instance.new("UIGradient")
 
 MinimizeGui.Name = "ExzetMinimizeGui"
-MinimizeGui.Parent = game:GetService("CoreGui")
-MinimizeGui.Enabled = false -- Default tersembunyi
+MinimizeGui.Parent = CoreGui
+MinimizeGui.Enabled = false -- Sembunyi sampai UI utama di-minimize
 
 MinimizeBtn.Parent = MinimizeGui
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBtn.Position = UDim2.new(0.02, 0, 0.2, 0)
-MinimizeBtn.Size = UDim2.new(0, 45, 0, 45)
+MinimizeBtn.Size = UDim2.new(0, 50, 0, 50) -- Ukuran kotak presisi
 MinimizeBtn.Font = Enum.Font.SourceSansBold
 MinimizeBtn.Text = "XZ"
-MinimizeBtn.TextColor3 = Color3.fromRGB(255, 30, 30)
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBtn.TextSize = 22.000
 MinimizeBtn.Active = true
-MinimizeBtn.Draggable = true -- BISA DIGESER DILAYAR
+MinimizeBtn.Draggable = true -- BISA DIGESER DI LAYAR
 
-UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.CornerRadius = UDim.new(0, 10)
 UICorner.Parent = MinimizeBtn
 
 UIStroke.Parent = MinimizeBtn
 UIStroke.Color = Color3.fromRGB(255, 0, 0)
 UIStroke.Thickness = 2
 
--- Kustomisasi tombol bawaan Orion (Minimize & Close)
+-- Gradasi Merah-Hitam untuk Tombol XZ
+UIGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(200, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 0))
+}
+UIGradient.Rotation = 45
+UIGradient.Parent = MinimizeBtn
+
+-- System Inject Gradient & Hide Orion Native Buttons
 task.spawn(function()
     task.wait(0.6)
     local OrionUI = CoreGui:FindFirstChild("Orion") or CoreGui:FindFirstChild("OrionLibrary")
     if OrionUI then
         local MainFrame = OrionUI:FindFirstChild("Main", true) or OrionUI:FindFirstChild("Container", true)
         
-        -- Event ketika Minimize ditekan
+        -- Paksa UI Utama Berwarna Gradasi Merah-Hitam & Transparan
+        if MainFrame then
+            MainFrame.BackgroundTransparency = 0.25
+            
+            -- Buat Gradient di Background Utama
+            local MainGrad = Instance.new("UIGradient")
+            MainGrad.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 0, 0)), -- Merah
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 10))  -- Hitam
+            }
+            MainGrad.Rotation = 135
+            MainGrad.Parent = MainFrame
+
+            -- Cari dan Sembunyikan Tombol Minimize/Close Bawaan Library agar tidak memanjang
+            for _, child in pairs(MainFrame:GetDescendants()) do
+                if child:IsA("ImageButton") or child:IsA("TextButton") then
+                    if child.Name == "Close" or child.Name == "Minimize" or child.Name == "More" then
+                        child.Visible = false
+                    end
+                end
+            end
+        end
+
+        -- Fungsi Klik Kotak XZ untuk Membuka Kembali UI
         MinimizeBtn.MouseButton1Click:Connect(function()
             if MainFrame then
                 MainFrame.Visible = true
                 MinimizeGui.Enabled = false
             end
         end)
-        
-        -- Override tombol close default dengan dialog konfirmasi
-        -- (Menggunakan dialog bawaan Orion atau sistem Bindable)
     end
 end)
 
--- Menambahkan tombol Exit manual di Tab Info untuk Konfirmasi Re-execute
+-- Tombol Minimize Manual & Close di dalam Tab Info
+InfoTab:AddButton({
+    Name = "Minimize UI (Sembunyikan ke Logo XZ)",
+    Callback = function()
+        local OrionUI = CoreGui:FindFirstChild("Orion") or CoreGui:FindFirstChild("OrionLibrary")
+        if OrionUI then
+            local MainFrame = OrionUI:FindFirstChild("Main", true) or OrionUI:FindFirstChild("Container", true)
+            if MainFrame then
+                MainFrame.Visible = false
+                MinimizeGui.Enabled = true -- Munculkan hanya tombol kotak XZ
+            end
+        end
+    end
+})
+
 InfoTab:AddButton({
     Name = "Tutup Script (Close UI)",
     Callback = function()
-        -- Dialog Konfirmasi
         OrionLib:MakeNotification({
             Name = "Konfirmasi Peringatan",
-            Content = "Jika Anda menutup UI ini, Anda harus mere-execute script agar dapat berjalan kembali!",
+            Content = "Jika ditutup, Anda harus mere-execute script agar dapat berjalan kembali!",
             Image = "rbxassetid://4483345998",
-            Time = 5
+            Time = 4
         })
         
-        task.wait(1)
+        task.wait(0.8)
         
-        -- Unload / Hapus UI
         OrionLib:Destroy()
-        if game:GetService("CoreGui"):FindFirstChild("ExzetMinimizeGui") then
-            game:GetService("CoreGui").ExzetMinimizeGui:Destroy()
+        if CoreGui:FindFirstChild("ExzetMinimizeGui") then
+            CoreGui.ExzetMinimizeGui:Destroy()
         end
     end    
 })
 
--- Memastikan Orion UI siap
 OrionLib:Init()
