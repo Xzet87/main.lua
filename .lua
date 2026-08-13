@@ -1,4 +1,4 @@
--- [[ EXZET HUB - ADVANCED Rarity EGG FINDER & ANTI-RUBBERBAND SPEED ]] --
+-- [[ EXZET HUB - V3 COMPLETE FIX: PERMANENT SPEED & AUTO COLLECT RARITY ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -7,24 +7,20 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Variables
-local defaultSpeed = 16
+-- Global State
 local customSpeed = 16
+local defaultSpeed = 16
 local isSpeedActive = false
 
-local customJump = 50
-local isJumpActive = false
-
-local isAutoEggActive = false
+local isAutoCollectActive = false
 local myBasePosition = nil
 local scannedEggsList = {}
 local filteredEggsList = {}
-local selectedEggIndex = 1
 
-local rarities = {"ALL", "Common", "Rare", "Epic", "Legendary", "Mythic", "Divine"}
+local rarities = {"ALL", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
 local selectedRarityIndex = 1
 
--- Cleanup Old UI
+-- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
     CoreGui.ExzetHubUI:Destroy()
 end
@@ -90,7 +86,7 @@ MainStroke.Parent = MainFrame
 MainStroke.Color = Color3.fromRGB(255, 40, 40)
 MainStroke.Thickness = 1.5
 
--- TOPBAR / HEADER
+-- TOPBAR
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
@@ -109,12 +105,12 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub"
+Title.Text = "Exzet Hub - V3"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- TOMBOL MINIMIZE (-) & CLOSE (X)
+-- MINIMIZE & CLOSE BUTTONS
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = Topbar
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -143,7 +139,6 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseBtn
 
--- TOGGLE LOGIC MINIMIZE
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
     ToggleIconBtn.Visible = true
@@ -224,7 +219,7 @@ MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
 -------------------------------------------------------------------
--- SPEED BYPASS ENGINE (SMOOTH NO-RUBBERBAND)
+-- SPEED BYPASS (AUTO RE-HOOK ON RESPAWN / DIE)
 -------------------------------------------------------------------
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
@@ -232,7 +227,7 @@ SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (Speed Bypass):"
+SpeedLabel.Text = "Kecepatan Jalan (Auto Anti-Death Reset):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 11
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -282,162 +277,102 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- EGG FINDER WITH RARITY FILTER
+-- INTEGRATED AUTO COLLECT & RARITY FINDER
 -------------------------------------------------------------------
 local RaritySelectBtn = Instance.new("TextButton")
 RaritySelectBtn.Parent = MainPage
 RaritySelectBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 180)
-RaritySelectBtn.Position = UDim2.new(0, 0, 0, 45)
-RaritySelectBtn.Size = UDim2.new(0, 276, 0, 24)
+RaritySelectBtn.Position = UDim2.new(0, 0, 0, 48)
+RaritySelectBtn.Size = UDim2.new(0, 276, 0, 25)
 RaritySelectBtn.Font = Enum.Font.GothamBold
-RaritySelectBtn.Text = "Filter Rarity: [ ALL ]"
+RaritySelectBtn.Text = "Target Rarity: [ ALL ]"
 RaritySelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 RaritySelectBtn.TextSize = 11
 
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
 SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 74)
-SetBaseBtn.Size = UDim2.new(0, 133, 0, 24)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 78)
+SetBaseBtn.Size = UDim2.new(0, 133, 0, 25)
 SetBaseBtn.Font = Enum.Font.GothamBold
-SetBaseBtn.Text = "1. Simpan Posisi Base"
+SetBaseBtn.Text = "1. Set Base Posisi"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SetBaseBtn.TextSize = 10
-
-local ScanBtn = Instance.new("TextButton")
-ScanBtn.Parent = MainPage
-ScanBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-ScanBtn.Position = UDim2.new(0, 138, 0, 74)
-ScanBtn.Size = UDim2.new(0, 138, 0, 24)
-ScanBtn.Font = Enum.Font.GothamBold
-ScanBtn.Text = "2. Scan Egg"
-ScanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ScanBtn.TextSize = 10
-
-local DisplayEggLabel = Instance.new("TextLabel")
-DisplayEggLabel.Parent = MainPage
-DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 102)
-DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
-DisplayEggLabel.Font = Enum.Font.Gotham
-DisplayEggLabel.Text = "Target: [ Belum Dipindai ]"
-DisplayEggLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
-DisplayEggLabel.TextSize = 10
-DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local SelectTargetBtn = Instance.new("TextButton")
-SelectTargetBtn.Parent = MainPage
-SelectTargetBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-SelectTargetBtn.Position = UDim2.new(0, 0, 0, 120)
-SelectTargetBtn.Size = UDim2.new(0, 276, 0, 24)
-SelectTargetBtn.Font = Enum.Font.GothamBold
-SelectTargetBtn.Text = "Ganti Target Egg (Next)"
-SelectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SelectTargetBtn.TextSize = 10
 
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
 TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 0, 0, 149)
-TPBaseDirectBtn.Size = UDim2.new(0, 133, 0, 26)
+TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 78)
+TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 25)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
 TPBaseDirectBtn.Text = "TP Ke Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TPBaseDirectBtn.TextSize = 10
 
-local ToggleEggBtn = Instance.new("TextButton")
-ToggleEggBtn.Parent = MainPage
-ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleEggBtn.Position = UDim2.new(0, 138, 0, 149)
-ToggleEggBtn.Size = UDim2.new(0, 138, 0, 26)
-ToggleEggBtn.Font = Enum.Font.GothamBold
-ToggleEggBtn.Text = "Auto Egg Loop: OFF"
-ToggleEggBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleEggBtn.TextSize = 10
+local DisplayEggLabel = Instance.new("TextLabel")
+DisplayEggLabel.Parent = MainPage
+DisplayEggLabel.BackgroundTransparency = 1
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 108)
+DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
+DisplayEggLabel.Font = Enum.Font.Gotham
+DisplayEggLabel.Text = "Status: Auto Collect Nonaktif"
+DisplayEggLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+DisplayEggLabel.TextSize = 10
+DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local ToggleAutoCollectBtn = Instance.new("TextButton")
+ToggleAutoCollectBtn.Parent = MainPage
+ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleAutoCollectBtn.Position = UDim2.new(0, 0, 0, 130)
+ToggleAutoCollectBtn.Size = UDim2.new(0, 276, 0, 32)
+ToggleAutoCollectBtn.Font = Enum.Font.GothamBold
+ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: OFF"
+ToggleAutoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleAutoCollectBtn.TextSize = 11
 
 -------------------------------------------------------------------
--- SCANNER & FILTERING LOGIC ENGINE
+-- EGG SCANNER & AUTO COLLECT ENGINE
 -------------------------------------------------------------------
-local function FilterEggsByRarity()
-    filteredEggsList = {}
-    local chosenRarity = rarities[selectedRarityIndex]
-    
-    for _, eggObj in ipairs(scannedEggsList) do
-        if eggObj and eggObj.Parent then
-            local objName = string.lower(eggObj.Name)
-            local parentName = string.lower(eggObj.Parent.Name)
-            local rName = string.lower(chosenRarity)
-            
-            if chosenRarity == "ALL" then
-                table.insert(filteredEggsList, eggObj)
-            else
-                -- Check if name contains rarity keyword or has attribute
-                if string.find(objName, rName) or string.find(parentName, rName) then
-                    table.insert(filteredEggsList, eggObj)
-                elseif eggObj:GetAttribute("Rarity") and string.lower(tostring(eggObj:GetAttribute("Rarity"))) == rName then
-                    table.insert(filteredEggsList, eggObj)
-                end
-            end
-        end
-    end
-    
-    if #filteredEggsList > 0 then
-        selectedEggIndex = 1
-        DisplayEggLabel.Text = "Target (#1/" .. #filteredEggsList .. "): " .. filteredEggsList[1].Name
-    else
-        DisplayEggLabel.Text = "Target: [ 0 Egg Rarity " .. chosenRarity .. " ]"
-    end
-end
-
-local function ScanWorkspaceForEggs()
+local function ScanAndFilterEggs()
     scannedEggsList = {}
+    filteredEggsList = {}
+    local chosenRarity = string.lower(rarities[selectedRarityIndex])
+
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
             local n = string.lower(obj.Name)
             local pN = string.lower(obj.Parent.Name)
+            
             if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN, "egg")) and not string.find(pN, "ui") then
                 table.insert(scannedEggsList, obj)
+                
+                if chosenRarity == "all" then
+                    table.insert(filteredEggsList, obj)
+                else
+                    if string.find(n, chosenRarity) or string.find(pN, chosenRarity) then
+                        table.insert(filteredEggsList, obj)
+                    elseif obj:GetAttribute("Rarity") and string.lower(tostring(obj:GetAttribute("Rarity"))) == chosenRarity then
+                        table.insert(filteredEggsList, obj)
+                    end
+                end
             end
         end
     end
-    FilterEggsByRarity()
 end
 
 RaritySelectBtn.MouseButton1Click:Connect(function()
     selectedRarityIndex = selectedRarityIndex + 1
     if selectedRarityIndex > #rarities then selectedRarityIndex = 1 end
-    RaritySelectBtn.Text = "Filter Rarity: [ " .. rarities[selectedRarityIndex] .. " ]"
-    FilterEggsByRarity()
+    RaritySelectBtn.Text = "Target Rarity: [ " .. rarities[selectedRarityIndex] .. " ]"
+    ScanAndFilterEggs()
 end)
 
 SetBaseBtn.MouseButton1Click:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
-        SetBaseBtn.Text = "Base Tersimpan!"
+        SetBaseBtn.Text = "Base OK!"
         task.wait(1)
-        SetBaseBtn.Text = "1. Simpan Posisi Base"
-    end
-end)
-
-ScanBtn.MouseButton1Click:Connect(function()
-    ScanWorkspaceForEggs()
-    ScanBtn.Text = "Pindai Selesai (" .. #filteredEggsList .. ")"
-    task.wait(1)
-    ScanBtn.Text = "2. Scan Egg"
-end)
-
-SelectTargetBtn.MouseButton1Click:Connect(function()
-    if #filteredEggsList > 0 then
-        selectedEggIndex = selectedEggIndex + 1
-        if selectedEggIndex > #filteredEggsList then selectedEggIndex = 1 end
-        local currentObj = filteredEggsList[selectedEggIndex]
-        if currentObj and currentObj.Parent then
-            DisplayEggLabel.Text = "Target (#" .. selectedEggIndex .. "/" .. #filteredEggsList .. "): " .. currentObj.Name
-        else
-            ScanWorkspaceForEggs()
-        end
-    else
-        ScanWorkspaceForEggs()
+        SetBaseBtn.Text = "1. Set Base Posisi"
     end
 end)
 
@@ -447,69 +382,82 @@ TPBaseDirectBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-ToggleEggBtn.MouseButton1Click:Connect(function()
-    isAutoEggActive = not isAutoEggActive
-    if isAutoEggActive then
-        ToggleEggBtn.Text = "Auto Egg Loop: ON"
-        ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+ToggleAutoCollectBtn.MouseButton1Click:Connect(function()
+    isAutoCollectActive = not isAutoCollectActive
+    if isAutoCollectActive then
+        ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: ON"
+        ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        ToggleEggBtn.Text = "Auto Egg Loop: OFF"
-        ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        ToggleAutoCollectBtn.Text = "AUTO COLLECT + TELEPORT BASE: OFF"
+        ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        DisplayEggLabel.Text = "Status: Auto Collect Nonaktif"
     end
 end)
 
--- AUTO LOOP
+-- AUTO EGG COLLECTOR MAIN LOOP
 task.spawn(function()
-    while task.wait(0.5) do
-        if isAutoEggActive then
+    while task.wait(0.3) do
+        if isAutoCollectActive then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                if #filteredEggsList == 0 then ScanWorkspaceForEggs() end
+                ScanAndFilterEggs()
                 
-                local targetEgg = filteredEggsList[selectedEggIndex]
-                if targetEgg and targetEgg.Parent then
+                if #filteredEggsList > 0 then
+                    local targetEgg = filteredEggsList[1] -- Ambil egg terdekat/teratas dari filter rarity
+                    DisplayEggLabel.Text = "Sedang Mengambil: " .. targetEgg.Name .. " (" .. rarities[selectedRarityIndex] .. ")"
+                    
                     local targetCFrame = nil
                     if targetEgg:IsA("BasePart") then targetCFrame = targetEgg.CFrame
                     elseif targetEgg:IsA("Model") and targetEgg.PrimaryPart then targetCFrame = targetEgg.PrimaryPart.CFrame
                     elseif targetEgg:IsA("Model") and targetEgg:FindFirstChildWhichIsA("BasePart") then targetCFrame = targetEgg:FindFirstChildWhichIsA("BasePart").CFrame end
                     
                     if targetCFrame then
-                        hrp.CFrame = targetCFrame + Vector3.new(0, 2.5, 0)
-                        for _, child in pairs(targetEgg:GetDescendants()) do
-                            if child:IsA("ProximityPrompt") then fireproximityprompt(child) end
+                        -- 1. Teleport ke Egg
+                        hrp.CFrame = targetCFrame + Vector3.new(0, 2, 0)
+                        
+                        -- 2. Trigger Proximity Prompt (Ambil Egg)
+                        for _, prompt in pairs(targetEgg:GetDescendants()) do
+                            if prompt:IsA("ProximityPrompt") then
+                                fireproximityprompt(prompt)
+                            end
                         end
-                        task.wait(0.4)
-                        if myBasePosition and isAutoEggActive then
+                        task.wait(0.3)
+                        
+                        -- 3. Teleport Langsung Balik Ke Base
+                        if myBasePosition and isAutoCollectActive then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                             task.wait(0.4)
                         end
                     end
                 else
-                    ScanWorkspaceForEggs()
+                    DisplayEggLabel.Text = "Mencari Egg Rarity (" .. rarities[selectedRarityIndex] .. ")..."
                 end
             end
         end
     end
 end)
 
--- CFrame Movement Engine (Mencegah Rubberband / Kena Tarik Server)
+-------------------------------------------------------------------
+-- PERMANENT SPEED BYPASS ENGINE (PERSISTENT AFTER DEATH)
+-------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
         local hum = char.Humanoid
         local hrp = char.HumanoidRootPart
         
+        -- Keeps speed working continuously without needing re-execute after death/collision
         if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
-            local speedFactor = (customSpeed / 16) - 1
-            if speedFactor > 0 then
-                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedFactor * 0.25))
+            local speedMultiplier = (customSpeed / 16) - 1
+            if speedMultiplier > 0 then
+                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedMultiplier * 0.28))
             end
         end
     end
 end)
 
--- Tab Switch
+-- TAB SWITCH
 InfoTabBtn.MouseButton1Click:Connect(function()
     InfoPage.Visible = true; MainPage.Visible = false
     InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
