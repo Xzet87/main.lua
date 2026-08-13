@@ -19,12 +19,12 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.BackgroundTransparency = 0.25 -- Transparansi Background
+MainFrame.BackgroundTransparency = 0.25
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
-MainFrame.ClipsDescendants = true -- Memotong elemen dalam agar tidak tembus lengkungan
+MainFrame.ClipsDescendants = true
 MainFrame.Active = true
-MainFrame.Draggable = true -- UI BISA DIGESER
+MainFrame.Draggable = true
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
@@ -33,8 +33,8 @@ MainCorner.Parent = MainFrame
 -- Gradient Merah ke Hitam untuk MainFrame
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)), -- Merah
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 10))  -- Hitam
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 10))
 }
 MainGradient.Rotation = 45
 MainGradient.Parent = MainFrame
@@ -45,29 +45,35 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER (Judul & Tombol Topbar)
+-- TOPBAR / HEADER (SUDUT ATAS MELENGKUNG PERFEK)
 -------------------------------------------------------------------
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
-Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Topbar.BackgroundTransparency = 0.6
+Topbar.BackgroundTransparency = 1 -- Container transparan
 Topbar.Size = UDim2.new(1, 0, 0, 40)
 
--- UICorner Topbar agar tidak lancip di sudut atas
+-- Bagian Atas Topbar (Mengikuti Lengkungan MainFrame)
+local TopbarTopBg = Instance.new("Frame")
+TopbarTopBg.Parent = Topbar
+TopbarTopBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopbarTopBg.BackgroundTransparency = 0.6
+TopbarTopBg.BorderSizePixel = 0
+TopbarTopBg.Position = UDim2.new(0, 0, 0, 0)
+TopbarTopBg.Size = UDim2.new(1, 0, 0, 20)
+
 local TopbarCorner = Instance.new("UICorner")
 TopbarCorner.CornerRadius = UDim.new(0, 12)
-TopbarCorner.Parent = Topbar
+TopbarCorner.Parent = TopbarTopBg
 
--- Frame penambal bagian bawah Topbar agar sudut bawahnya tetap rata
-local TopbarBottomFill = Instance.new("Frame")
-TopbarBottomFill.Name = "TopbarBottomFill"
-TopbarBottomFill.Parent = Topbar
-TopbarBottomFill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-TopbarBottomFill.BackgroundTransparency = 0.6
-TopbarBottomFill.BorderSizePixel = 0
-TopbarBottomFill.Position = UDim2.new(0, 0, 0.5, 0)
-TopbarBottomFill.Size = UDim2.new(1, 0, 0.5, 0)
+-- Bagian Bawah Topbar (Lurus Rata, Tidak Bertumpuk Transparansinya)
+local TopbarBottomBg = Instance.new("Frame")
+TopbarBottomBg.Parent = Topbar
+TopbarBottomBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopbarBottomBg.BackgroundTransparency = 0.6
+TopbarBottomBg.BorderSizePixel = 0
+TopbarBottomBg.Position = UDim2.new(0, 0, 0, 20)
+TopbarBottomBg.Size = UDim2.new(1, 0, 0, 20)
 
 -- Title "Exzet Hub" di kiri atas
 local Title = Instance.new("TextLabel")
@@ -80,7 +86,7 @@ Title.Text = "Exzet Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 2
+Title.ZIndex = 3
 
 -------------------------------------------------------------------
 -- NAVIGATION / TAB BUTTONS
@@ -174,7 +180,7 @@ DiscCorner.CornerRadius = UDim.new(0, 6)
 DiscCorner.Parent = DiscordBtn
 
 DiscordBtn.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/yourlinkhere") -- Salin link discord
+    setclipboard("https://discord.gg/yourlinkhere")
     DiscordBtn.Text = "Link Tersalin!"
     task.wait(2)
     DiscordBtn.Text = "Salin Link Discord"
@@ -222,10 +228,10 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE DENGAN TEKS XZ & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE XZ & CLOSE CONFIRMATION)
 -------------------------------------------------------------------
 
--- Floating Button Minimize (Dengan Huruf XZ)
+-- Floating Button Minimize (Dengan Teks XZ)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
@@ -233,9 +239,10 @@ MinimizeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.Position = UDim2.new(0.02, 0, 0.2, 0)
 MinimizeBox.Size = UDim2.new(0, 40, 0, 40)
 MinimizeBox.Font = Enum.Font.GothamBold
-MinimizeBox.Text = "XZ" -- Menampilkan teks XZ saat di-minimize
+MinimizeBox.Text = "XZ"
 MinimizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBox.TextSize = 15
+MinimizeBox.TextSize = 16
+MinimizeBox.ZIndex = 10
 MinimizeBox.Active = true
 MinimizeBox.Draggable = true
 MinimizeBox.Visible = false
@@ -267,16 +274,16 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinBtn.TextSize = 20
-MinBtn.ZIndex = 2
+MinBtn.ZIndex = 3
 
 MinBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
-    MinimizeBox.Visible = true -- Tampilkan kotak merah XZ
+    MinimizeBox.Visible = true
 end)
 
 MinimizeBox.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
-    MinimizeBox.Visible = false -- Sembunyikan kotak merah XZ
+    MinimizeBox.Visible = false
 end)
 
 -- Tombol Close (X) di Topbar
@@ -289,7 +296,7 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
 CloseBtn.TextSize = 16
-CloseBtn.ZIndex = 2
+CloseBtn.ZIndex = 3
 
 -- Pop-up Konfirmasi Close
 local ConfirmFrame = Instance.new("Frame")
@@ -298,7 +305,7 @@ ConfirmFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 ConfirmFrame.Position = UDim2.new(0.15, 0, 0.25, 0)
 ConfirmFrame.Size = UDim2.new(0.7, 0, 0.5, 0)
 ConfirmFrame.Visible = false
-ConfirmFrame.ZIndex = 3
+ConfirmFrame.ZIndex = 5
 
 local ConfirmCorner = Instance.new("UICorner")
 ConfirmCorner.CornerRadius = UDim.new(0, 8)
@@ -318,7 +325,7 @@ ConfirmText.Text = "Peringatan!\nJika di-close, Anda harus re-execute script aga
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.TextSize = 12
 ConfirmText.TextWrapped = true
-ConfirmText.ZIndex = 4
+ConfirmText.ZIndex = 6
 
 local YesBtn = Instance.new("TextButton")
 YesBtn.Parent = ConfirmFrame
@@ -329,7 +336,7 @@ YesBtn.Font = Enum.Font.GothamBold
 YesBtn.Text = "Tutup UI"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.TextSize = 13
-YesBtn.ZIndex = 4
+YesBtn.ZIndex = 6
 
 local YesCorner = Instance.new("UICorner")
 YesCorner.CornerRadius = UDim.new(0, 6)
@@ -344,7 +351,7 @@ NoBtn.Font = Enum.Font.GothamBold
 NoBtn.Text = "Batal"
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.TextSize = 13
-NoBtn.ZIndex = 4
+NoBtn.ZIndex = 6
 
 local NoCorner = Instance.new("UICorner")
 NoCorner.CornerRadius = UDim.new(0, 6)
