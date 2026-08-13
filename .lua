@@ -1,8 +1,15 @@
--- [[ EXZET HUB - MAIN TAB FEATURES (WALKSPEED & JUMPHEIGHT) ]] --
+-- [[ EXZET HUB - FULL CODE (UNIVERSAL BYPASS & STABLE UI) ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+
+-- Matikan Topbar/Header Bawaan Roblox Agar Bar Hitam Tidak Muncul
+pcall(function()
+    StarterGui:SetCore("TopbarEnabled", false)
+end)
 
 -- Hapus UI lama jika ada
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -21,7 +28,7 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MainFrame.BackgroundTransparency = 0.25
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -44,7 +51,7 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER
+-- TOPBAR / HEADER UI
 -------------------------------------------------------------------
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
@@ -130,7 +137,7 @@ ContentContainer.Position = UDim2.new(0, 120, 0, 45)
 ContentContainer.Size = UDim2.new(1, -130, 1, -55)
 ContentContainer.ZIndex = 2
 
--- PAGE INFO
+-- PAGE 1: INFO
 local InfoPage = Instance.new("Frame")
 InfoPage.Parent = ContentContainer
 InfoPage.BackgroundTransparency = 1
@@ -181,23 +188,26 @@ DiscordBtn.MouseButton1Click:Connect(function()
     DiscordBtn.Text = "Salin Link Discord"
 end)
 
--------------------------------------------------------------------
--- PAGE MAIN (WALKSPEED & JUMPHEIGHT)
--------------------------------------------------------------------
+-- PAGE 2: MAIN (WALKSPEED & JUMPHEIGHT)
 local MainPage = Instance.new("Frame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
--- FITUR 1: WALKSPEED
+local customSpeed = 16
+local isSpeedActive = false
+local customJump = 50
+local isJumpActive = false
+
+-- FITUR WALKSPEED
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 5)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (WalkSpeed):"
+SpeedLabel.Text = "Kecepatan Jalan (Speed Bypass):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 13
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -208,7 +218,7 @@ SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SpeedInput.Position = UDim2.new(0, 0, 0, 30)
 SpeedInput.Size = UDim2.new(0, 120, 0, 30)
 SpeedInput.Font = Enum.Font.Gotham
-SpeedInput.PlaceholderText = "Default: 16"
+SpeedInput.PlaceholderText = "Misal: 30 / 50"
 SpeedInput.Text = ""
 SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedInput.TextSize = 13
@@ -245,22 +255,23 @@ local SpeedResetCorner = Instance.new("UICorner")
 SpeedResetCorner.CornerRadius = UDim.new(0, 6)
 SpeedResetCorner.Parent = SpeedResetBtn
 
--- LOGIC WALKSPEED
 SpeedApplyBtn.MouseButton1Click:Connect(function()
     local num = tonumber(SpeedInput.Text)
-    if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = num
+    if num then
+        customSpeed = num
+        isSpeedActive = true
     end
 end)
 
 SpeedResetBtn.MouseButton1Click:Connect(function()
+    isSpeedActive = false
+    SpeedInput.Text = ""
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = 16
-        SpeedInput.Text = ""
     end
 end)
 
--- FITUR 2: JUMPHEIGHT / JUMPPOWER
+-- FITUR JUMPHEIGHT
 local JumpLabel = Instance.new("TextLabel")
 JumpLabel.Parent = MainPage
 JumpLabel.BackgroundTransparency = 1
@@ -315,29 +326,53 @@ local JumpResetCorner = Instance.new("UICorner")
 JumpResetCorner.CornerRadius = UDim.new(0, 6)
 JumpResetCorner.Parent = JumpResetBtn
 
--- LOGIC JUMPHEIGHT & JUMPPOWER (Auto detect mana yang dipakai game)
 JumpApplyBtn.MouseButton1Click:Connect(function()
     local num = tonumber(JumpInput.Text)
-    if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        local hum = LocalPlayer.Character.Humanoid
-        hum.UseJumpPower = true
-        hum.JumpPower = num
-        hum.JumpHeight = num
+    if num then
+        customJump = num
+        isJumpActive = true
     end
 end)
 
 JumpResetBtn.MouseButton1Click:Connect(function()
+    isJumpActive = false
+    JumpInput.Text = ""
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local hum = LocalPlayer.Character.Humanoid
         hum.UseJumpPower = true
         hum.JumpPower = 50
         hum.JumpHeight = 7.2
-        JumpInput.Text = ""
     end
 end)
 
 -------------------------------------------------------------------
--- TABS SWITCHING LOGIC
+-- ENGINE BYPASS (REALTIME LOOP)
+-------------------------------------------------------------------
+RunService.Heartbeat:Connect(function(delta)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+        local hrp = char.HumanoidRootPart
+        local hum = char.Humanoid
+
+        -- BYPASS WALKSPEED MENGGUNAKAN CFRAME
+        if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
+            local speedMultiplier = (customSpeed / 16) - 1
+            if speedMultiplier > 0 then
+                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedMultiplier * 16 * delta))
+            end
+        end
+
+        -- BYPASS JUMP
+        if isJumpActive then
+            hum.UseJumpPower = true
+            hum.JumpPower = customJump
+            hum.JumpHeight = customJump
+        end
+    end
+end)
+
+-------------------------------------------------------------------
+-- TAB SWITCHING LOGIC
 -------------------------------------------------------------------
 InfoTabBtn.MouseButton1Click:Connect(function()
     InfoPage.Visible = true
@@ -362,7 +397,7 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE & CLOSE)
 -------------------------------------------------------------------
 
 -- Floating Button Minimize (XZ)
@@ -405,7 +440,7 @@ MinText.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinText.TextSize = 16
 MinText.ZIndex = 999
 
--- Tombol Minimize (-) di Topbar
+-- Tombol Minimize (-)
 local MinBtn = Instance.new("TextButton")
 MinBtn.Parent = Topbar
 MinBtn.BackgroundTransparency = 1
@@ -427,7 +462,7 @@ MinimizeBox.MouseButton1Click:Connect(function()
     MinimizeBox.Visible = false
 end)
 
--- Tombol Close (X) di Topbar
+-- Tombol Close (X)
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = Topbar
 CloseBtn.BackgroundTransparency = 1
