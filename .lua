@@ -1,4 +1,4 @@
--- [[ EXZET HUB - ADVANCED DYNAMIC SCANNER & AUTO EGG ]] --
+-- [[ EXZET HUB - FIXED UI & ADVANCED EGG SCANNER ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -8,23 +8,17 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 -- State Variables
+local defaultSpeed = 16
 local customSpeed = 16
 local isSpeedActive = false
-local customJump = 50
-local isJumpActive = false
 local isAutoEggActive = false
 local myBasePosition = nil
 
--- Data Pindai Telur
+-- Data Scan Telur
 local scannedEggsList = {}
 local selectedEggIndex = 1
-local selectedFilterRarity = "ALL"
 
--- Matikan Topbar Roblox
-pcall(function()
-    StarterGui:SetCore("TopbarEnabled", false)
-end)
-
+-- Hapus UI lama jika ada
 if CoreGui:FindFirstChild("ExzetHubUI") then
     CoreGui.ExzetHubUI:Destroy()
 end
@@ -34,15 +28,17 @@ ExzetHubUI.Name = "ExzetHubUI"
 ExzetHubUI.Parent = CoreGui
 ExzetHubUI.ResetOnSpawn = false
 
+-- MAIN FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -170)
-MainFrame.Size = UDim2.new(0, 450, 0, 360)
+MainFrame.Size = UDim2.new(0, 450, 0, 350)
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ClipsDescendants = false
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
@@ -50,7 +46,7 @@ MainCorner.Parent = MainFrame
 
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 0, 0)),
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
 }
 MainGradient.Rotation = 45
@@ -63,12 +59,16 @@ MainStroke.Thickness = 1.5
 
 -- TOPBAR / HEADER
 local Topbar = Instance.new("Frame")
+Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
-Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Topbar.BackgroundTransparency = 0.5
+Topbar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Topbar.BackgroundTransparency = 0.3
 Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 38)
-Topbar.ZIndex = 2
+
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 10)
+TopbarCorner.Parent = Topbar
 
 local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
@@ -76,10 +76,59 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Steal An Egg"
+Title.Text = "Exzet Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- TOMBOL MINIMIZE (-) & CLOSE (X)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Parent = Topbar
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinimizeBtn.Position = UDim2.new(1, -70, 0, 6)
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 16
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeBtn
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = Topbar
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+CloseBtn.Position = UDim2.new(1, -36, 0, 6)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+-- LOGIK TOMBOL MINIMIZE & CLOSE
+local isMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        MainFrame:TweenSize(UDim2.new(0, 450, 0, 38), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.3, true)
+    else
+        MainFrame:TweenSize(UDim2.new(0, 450, 0, 350), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.3, true)
+    end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ExzetHubUI:Destroy()
+    StarterGui:SetCore("SendNotification", {
+        Title = "Exzet Hub",
+        Text = "UI Ditutup! Silakan re-execute script untuk memunculkan kembali.",
+        Duration = 5
+    })
+end)
 
 -- TAB NAVIGATION
 local TabBar = Instance.new("Frame")
@@ -115,7 +164,7 @@ local MainTabCorner = Instance.new("UICorner")
 MainTabCorner.CornerRadius = UDim.new(0, 6)
 MainTabCorner.Parent = MainTabBtn
 
--- CONTENT PAGES
+-- CONTENT CONTAINER
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
@@ -146,7 +195,7 @@ MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
--- FITUR SPEED
+-- FITUR SPEED + TOMBOL RESET SPEED
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
 SpeedLabel.BackgroundTransparency = 1
@@ -162,28 +211,52 @@ local SpeedInput = Instance.new("TextBox")
 SpeedInput.Parent = MainPage
 SpeedInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 SpeedInput.Position = UDim2.new(0, 0, 0, 20)
-SpeedInput.Size = UDim2.new(0, 110, 0, 25)
+SpeedInput.Size = UDim2.new(0, 90, 0, 25)
 SpeedInput.Font = Enum.Font.Gotham
-SpeedInput.PlaceholderText = "Default: 16"
+SpeedInput.PlaceholderText = "16"
 SpeedInput.Text = ""
 SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 local SpeedApplyBtn = Instance.new("TextButton")
 SpeedApplyBtn.Parent = MainPage
 SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SpeedApplyBtn.Position = UDim2.new(0, 118, 0, 20)
-SpeedApplyBtn.Size = UDim2.new(0, 80, 0, 25)
+SpeedApplyBtn.Position = UDim2.new(0, 96, 0, 20)
+SpeedApplyBtn.Size = UDim2.new(0, 75, 0, 25)
 SpeedApplyBtn.Font = Enum.Font.GothamBold
 SpeedApplyBtn.Text = "Set Speed"
 SpeedApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedApplyBtn.TextSize = 11
+
+local SpeedResetBtn = Instance.new("TextButton")
+SpeedResetBtn.Parent = MainPage
+SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SpeedResetBtn.Position = UDim2.new(0, 176, 0, 20)
+SpeedResetBtn.Size = UDim2.new(0, 102, 0, 25)
+SpeedResetBtn.Font = Enum.Font.GothamBold
+SpeedResetBtn.Text = "Reset Speed"
+SpeedResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedResetBtn.TextSize = 11
+
+local ResetCorner = Instance.new("UICorner")
+ResetCorner.CornerRadius = UDim.new(0, 4)
+ResetCorner.Parent = SpeedResetBtn
 
 SpeedApplyBtn.MouseButton1Click:Connect(function()
     local num = tonumber(SpeedInput.Text)
     if num then customSpeed = num; isSpeedActive = true end
 end)
 
+SpeedResetBtn.MouseButton1Click:Connect(function()
+    isSpeedActive = false
+    customSpeed = defaultSpeed
+    SpeedInput.Text = ""
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = defaultSpeed
+    end
+end)
+
 -------------------------------------------------------------------
--- STEAL AN EGG - AUTOMATIC SCANNER & TELEPORT ENGINE
+-- STEAL AN EGG - AUTOMATIC SCANNER ENGINE
 -------------------------------------------------------------------
 local EggLabel = Instance.new("TextLabel")
 EggLabel.Parent = MainPage
@@ -235,7 +308,7 @@ local ScanCorner = Instance.new("UICorner")
 ScanCorner.CornerRadius = UDim.new(0, 6)
 ScanCorner.Parent = ScanBtn
 
--- Label Hasil Scan & Filter Rarity
+-- Label Target Egg
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
@@ -278,7 +351,7 @@ ToggleCorner.CornerRadius = UDim.new(0, 6)
 ToggleCorner.Parent = ToggleEggBtn
 
 -------------------------------------------------------------------
--- FUNGSI PINDAI (SCAN) WORKSPACE
+-- LOGIKA PEMINDAIAN & SCANNER
 -------------------------------------------------------------------
 local function ScanWorkspaceForEggs()
     scannedEggsList = {}
@@ -287,7 +360,6 @@ local function ScanWorkspaceForEggs()
             local n = string.lower(obj.Name)
             local pN = string.lower(obj.Parent.Name)
             
-            -- Pindai semua yang berhubungan dengan Telur / Egg
             if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN, "egg")) and not string.find(pN, "ui") then
                 table.insert(scannedEggsList, obj)
             end
@@ -338,7 +410,7 @@ ToggleEggBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- MAIN LOOP AUTO TELEPORT (LARI AMBIL & BALIK)
+-- LOOP TELEPORT AUTO EGG
 -------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.6) do
@@ -347,14 +419,12 @@ task.spawn(function()
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
                 
-                -- Jika daftar telur belum dipindai, lakukan pindai otomatis
                 if #scannedEggsList == 0 then
                     ScanWorkspaceForEggs()
                 end
                 
                 local targetEgg = scannedEggsList[selectedEggIndex]
                 
-                -- Jika target telur valid & masih ada di game
                 if targetEgg and targetEgg.Parent then
                     local targetCFrame = nil
                     
@@ -370,23 +440,21 @@ task.spawn(function()
                         -- 1. Teleport ke Telur
                         hrp.CFrame = targetCFrame + Vector3.new(0, 2, 0)
                         
-                        -- Pemicu pemicu sentuhan (Touch Interest / Proximity Prompt jika ada)
                         for _, child in pairs(targetEgg:GetDescendants()) do
                             if child:IsA("ProximityPrompt") then
                                 fireproximityprompt(child)
                             end
                         end
                         
-                        task.wait(0.4) -- Delay aman pemicu ambil telur
+                        task.wait(0.4)
                         
-                        -- 2. Teleport Balik Ke Base milikmu
+                        -- 2. Teleport Balik Ke Base
                         if myBasePosition and isAutoEggActive then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                             task.wait(0.4)
                         end
                     end
                 else
-                    -- Jika telur target sudah diambil orang lain, otomatis pindai ulang
                     ScanWorkspaceForEggs()
                 end
             end
@@ -395,7 +463,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------------------------
--- TAB SWITCHING LOGIC & SPEED BYPASS
+-- SPEED BYPASS ENGINE & TAB SWITCHING
 -------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
