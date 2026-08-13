@@ -1,4 +1,4 @@
--- [[ EXZET HUB - FIX REAL EGG STEALER (NO FUSE MACHINE) ]] --
+-- [[ EXZET HUB - FIX REAL EGG STEALER + RARITY FILTER ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -13,6 +13,7 @@ local isSpeedActive = false
 
 local isAutoStealActive = false
 local myBasePosition = nil
+local selectedRarity = "All" -- Default pilihan rarity
 
 -- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -51,15 +52,15 @@ IconStroke.Color = Color3.fromRGB(255, 255, 255)
 IconStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- 2. MAIN HUB FRAME (UI ASLI RED/BLACK)
+-- 2. MAIN HUB FRAME
 -------------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -165)
-MainFrame.Size = UDim2.new(0, 450, 0, 330)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -185)
+MainFrame.Size = UDim2.new(0, 450, 0, 370)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -97,9 +98,9 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 220, 1, 0)
+Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Auto Steal Fix"
+Title.Text = "Exzet Hub - Auto Steal + Rarity"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -201,7 +202,7 @@ CreatorLabel.BackgroundTransparency = 1
 CreatorLabel.Position = UDim2.new(0, 0, 0, 5)
 CreatorLabel.Size = UDim2.new(1, 0, 0, 20)
 CreatorLabel.Font = Enum.Font.GothamBold
-CreatorLabel.Text = "Pembuat: exzet"
+CreatorLabel.Text = "Pembuat: exzet (Updated)"
 CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreatorLabel.TextSize = 14
 CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -221,7 +222,7 @@ SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (Permanent No-Reset):"
+SpeedLabel.Text = "Kecepatan Jalan:"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 11
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -271,13 +272,13 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STEAL EGG CONTROLS (FULL FIX)
+-- STEAL EGG & RARITY CONTROLS
 -------------------------------------------------------------------
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
 SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 50)
-SetBaseBtn.Size = UDim2.new(0, 133, 0, 26)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 48)
+SetBaseBtn.Size = UDim2.new(0, 133, 0, 24)
 SetBaseBtn.Font = Enum.Font.GothamBold
 SetBaseBtn.Text = "1. Set Posisi Base"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -286,17 +287,60 @@ SetBaseBtn.TextSize = 10
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
 TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 50)
-TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 26)
+TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 48)
+TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 24)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
 TPBaseDirectBtn.Text = "TP Ke Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TPBaseDirectBtn.TextSize = 10
 
+-- RARITY SELECTOR LABEL
+local RarityLabel = Instance.new("TextLabel")
+RarityLabel.Parent = MainPage
+RarityLabel.BackgroundTransparency = 1
+RarityLabel.Position = UDim2.new(0, 0, 0, 77)
+RarityLabel.Size = UDim2.new(1, 0, 0, 15)
+RarityLabel.Font = Enum.Font.GothamBold
+RarityLabel.Text = "Pilih Rarity Telur (Target: All):"
+RarityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RarityLabel.TextSize = 10
+RarityLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- RARITY BUTTONS CONTAINER (All, Common, Rare, Epic, Legendary, Mythic)
+local rarities = {"All", "Common", "Rare", "Epic", "Legendary", "Mythic"}
+local rarityButtons = {}
+
+for i, rarity in ipairs(rarities) do
+    local btn = Instance.new("TextButton")
+    btn.Parent = MainPage
+    btn.BackgroundColor3 = (rarity == "All") and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(40, 40, 40)
+    btn.Position = UDim2.new(0, (i-1) * 47, 0, 95)
+    btn.Size = UDim2.new(0, 45, 0, 22)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = rarity
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 9
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        selectedRarity = rarity
+        RarityLabel.Text = "Pilih Rarity Telur (Target: " .. rarity .. "):"
+        for _, b in pairs(rarityButtons) do
+            b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    end)
+    
+    table.insert(rarityButtons, btn)
+end
+
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 85)
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 124)
 DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
 DisplayEggLabel.Font = Enum.Font.Gotham
 DisplayEggLabel.Text = "Status: Nonaktif"
@@ -307,7 +351,7 @@ DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
 local ToggleAutoStealBtn = Instance.new("TextButton")
 ToggleAutoStealBtn.Parent = MainPage
 ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleAutoStealBtn.Position = UDim2.new(0, 0, 0, 108)
+ToggleAutoStealBtn.Position = UDim2.new(0, 0, 0, 145)
 ToggleAutoStealBtn.Size = UDim2.new(0, 276, 0, 32)
 ToggleAutoStealBtn.Font = Enum.Font.GothamBold
 ToggleAutoStealBtn.Text = "AUTO STEAL EGG: OFF"
@@ -347,7 +391,7 @@ ToggleAutoStealBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STRICT EGG FILTER ENGINE (ANTI-DNA, PET, FUSE, MACHINE, DLL)
+-- STRICT EGG FILTER ENGINE WITH RARITY SCANNER
 -------------------------------------------------------------------
 local function GetValidStealableEggs()
     local validEggs = {}
@@ -357,7 +401,7 @@ local function GetValidStealableEggs()
             local actionText = string.lower(prompt.ActionText or "")
             local objectText = string.lower(prompt.ObjectText or "")
             local parentName = string.lower(prompt.Parent.Name or "")
-            local fullText = actionText .. " " .. objectText .. " "  .. parentName
+            local fullText = actionText .. " " .. objectText .. " " .. parentName
 
             -- 1. Harus mengandung kata kunci utama Telur
             local isEggItem = string.find(fullText, "egg")
@@ -376,9 +420,17 @@ local function GetValidStealableEggs()
             local isStealable = string.find(fullText, "steal") or string.find(fullText, "egg") or string.find(fullText, "take") or string.find(fullText, "grab")
 
             if isEggItem and isStealable and not isForbidden then
-                -- 4. Cek apakah ini milik player lain / karakter player
+                -- 4. Cek Rarity Filter jika tidak diset ke "All"
+                local matchesRarity = true
+                if selectedRarity ~= "All" then
+                    if not string.find(fullText, string.lower(selectedRarity)) then
+                        matchesRarity = false
+                    end
+                end
+
+                -- 5. Cek apakah ini milik player lain / bukan karakter player
                 local charAncestor = prompt:FindFirstAncestorOfClass("Model")
-                if not (charAncestor and Players:GetPlayerFromCharacter(charAncestor)) then
+                if matchesRarity and not (charAncestor and Players:GetPlayerFromCharacter(charAncestor)) then
                     table.insert(validEggs, prompt)
                 end
             end
@@ -389,7 +441,7 @@ local function GetValidStealableEggs()
 end
 
 -------------------------------------------------------------------
--- REAL STEAL & BLINK RETURN LOOP
+-- REAL STEAL & 100% HOLD LOOP (FROM BASE TO EGG & BACK)
 -------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.2) do
@@ -410,38 +462,31 @@ task.spawn(function()
 
                         local targetCFrame = targetPart:IsA("BasePart") and targetPart.CFrame or (targetPart:IsA("Model") and targetPart:GetPivot() or hrp.CFrame)
 
-                        -- 1. Teleport ke Telur
+                        -- 1. Teleport Langsung dari Base ke Telur
                         hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-                        task.wait(0.12)
+                        task.wait(0.15)
 
-                        -- 2. Trigger Steal (Proximity Prompt)
+                        -- 2. Trigger Steal & Tunggu Sampai 100% Selesai (HoldDuration)
                         if fireproximityprompt then
                             fireproximityprompt(selectedPrompt)
                         end
+                        
                         if selectedPrompt.InputHoldBegin then
                             selectedPrompt:InputHoldBegin()
-                            task.wait(selectedPrompt.HoldDuration > 0 and selectedPrompt.HoldDuration or 0.2)
+                            local duration = selectedPrompt.HoldDuration > 0 and selectedPrompt.HoldDuration or 0.2
+                            task.wait(duration + 0.1) -- Menunggu persis sampai 100%
                             selectedPrompt:InputHoldEnd()
+                        else
+                            task.wait(0.3)
                         end
 
-                        task.wait(0.15)
+                        task.wait(0.1)
 
-                        -- 3. Blink Teleport Kembali Ke Base (Bertahap Cepat Biar Telur Tidak Lepas)
-                        local startPos = hrp.Position
-                        local endPos = myBasePosition
-                        local dist = (endPos - startPos).Magnitude
-                        local steps = math.clamp(math.floor(dist / 20), 3, 10)
-
-                        for i = 1, steps do
-                            if not isAutoStealActive then break end
-                            hrp.CFrame = CFrame.new(startPos:Lerp(endPos, i / steps) + Vector3.new(0, 2.5, 0))
-                            task.wait(0.03)
-                        end
-
+                        -- 3. Teleport Kembali Langsung Ke Base
                         hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                         task.wait(0.4) -- Waktu tunggu deposit telur di base
                     else
-                        DisplayEggLabel.Text = "Mencari Telur di Arena..."
+                        DisplayEggLabel.Text = "Mencari Rarity [" .. selectedRarity .. "] di Arena..."
                     end
                 end
             end
