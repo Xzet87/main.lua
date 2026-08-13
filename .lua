@@ -1,4 +1,4 @@
--- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT TOPBAR & TEXT FIX) ]] --
+-- [[ EXZET HUB - CUSTOM GRADIENT UI (FIX TRANSPARENCY & CORNERS) ]] --
 
 local CoreGui = game:GetService("CoreGui")
 
@@ -18,9 +18,10 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.BackgroundTransparency = 0.25
+MainFrame.BackgroundTransparency = 0.25 -- Transparansi Background Tetap Ada!
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
+MainFrame.ClipsDescendants = true -- Memotong child agar tidak tembus
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -43,30 +44,15 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER (LENGKUNG ATAS RAFI, BAWAH RATA)
+-- TOPBAR / HEADER (PERFECT GRADIENT OVERLAY - GAK BAKAL TEMBUS)
 -------------------------------------------------------------------
-local Topbar = Instance.new("CanvasGroup")
+local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
 Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Topbar.GroupTransparency = 0.5 -- Menjaga transparansi hitam merata
+Topbar.BackgroundTransparency = 0.5 -- Tetap transparan
 Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 40)
-Topbar.ZIndex = 2
-
--- Melengkungkan sudut atas Topbar
-local TopbarCorner = Instance.new("UICorner")
-TopbarCorner.CornerRadius = UDim.new(0, 12)
-TopbarCorner.Parent = Topbar
-
--- Penambal bawah agar bagian bawah Topbar tetap lurus (tidak melengkung di dalam)
-TopbarBottomFill = Instance.new("Frame")
-TopbarBottomFill.Name = "BottomFill"
-TopbarBottomFill.Parent = Topbar
-TopbarBottomFill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-TopbarBottomFill.BorderSizePixel = 0
-TopbarBottomFill.Position = UDim2.new(0, 0, 0, 20)
-TopbarBottomFill.Size = UDim2.new(1, 0, 0, 20)
 
 -- Title "Exzet Hub" di kiri atas
 local Title = Instance.new("TextLabel")
@@ -79,7 +65,6 @@ Title.Text = "Exzet Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 3
 
 -------------------------------------------------------------------
 -- NAVIGATION / TAB BUTTONS
@@ -89,7 +74,6 @@ TabBar.Parent = MainFrame
 TabBar.BackgroundTransparency = 1
 TabBar.Position = UDim2.new(0, 10, 0, 45)
 TabBar.Size = UDim2.new(0, 100, 1, -55)
-TabBar.ZIndex = 2
 
 local InfoTabBtn = Instance.new("TextButton")
 InfoTabBtn.Parent = TabBar
@@ -128,7 +112,6 @@ ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 120, 0, 45)
 ContentContainer.Size = UDim2.new(1, -130, 1, -55)
-ContentContainer.ZIndex = 2
 
 -- PAGE INFO
 local InfoPage = Instance.new("Frame")
@@ -223,17 +206,17 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE XZ & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE & CLOSE CONFIRMATION)
 -------------------------------------------------------------------
 
--- Floating Button Minimize
+-- Floating Button Minimize (Kotak Merah Gradasi)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
 MinimizeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.Position = UDim2.new(0.02, 0, 0.2, 0)
 MinimizeBox.Size = UDim2.new(0, 42, 0, 42)
-MinimizeBox.Text = "" -- TextButton dibikin kosong
+MinimizeBox.Text = "" 
 MinimizeBox.Active = true
 MinimizeBox.Draggable = true
 MinimizeBox.Visible = false
@@ -255,7 +238,7 @@ MinStroke.Parent = MinimizeBox
 MinStroke.Color = Color3.fromRGB(255, 50, 50)
 MinStroke.Thickness = 1.5
 
--- TextLabel Khusus untuk Huruf "XZ" (Dijamin Muncul Terang di Atas Gradasi)
+-- TEKS "XZ" DIJAMIN MUNCHUL DI ATAS KOTAK MINIMIZE
 local MinText = Instance.new("TextLabel")
 MinText.Name = "MinText"
 MinText.Parent = MinimizeBox
@@ -265,7 +248,7 @@ MinText.Font = Enum.Font.GothamBold
 MinText.Text = "XZ"
 MinText.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinText.TextSize = 16
-MinText.ZIndex = 10
+MinText.ZIndex = 999 -- Memaksa teks tampil paling atas
 
 -- Tombol Minimize (-) di Topbar
 local MinBtn = Instance.new("TextButton")
@@ -277,7 +260,6 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinBtn.TextSize = 20
-MinBtn.ZIndex = 3
 
 MinBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
@@ -299,7 +281,6 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
 CloseBtn.TextSize = 16
-CloseBtn.ZIndex = 3
 
 -- Pop-up Konfirmasi Close
 local ConfirmFrame = Instance.new("Frame")
