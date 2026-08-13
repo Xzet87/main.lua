@@ -1,8 +1,7 @@
--- [[ EXZET HUB V4 - PLACE / ZONE EGG FINDER + AUTO COLLECT + PERMANENT SPEED ]] --
+-- [[ EXZET HUB V5 - DYNAMIC MAP / ZONE AUTO DETECT & COLLECTOR ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
@@ -17,8 +16,8 @@ local myBasePosition = nil
 local scannedEggsList = {}
 local filteredEggsList = {}
 
--- Daftar Pilihan Zona / Tempat
-local zonesList = {"ALL Zones", "Zone 1 / Spawn", "Zone 2", "Zone 3", "Zone 4", "Secret / Island"}
+-- Dynamic Zone Storage
+local dynamicZonesList = {"[ SEMUA LOKASI ]"}
 local selectedZoneIndex = 1
 
 -- Clean Old GUI
@@ -106,9 +105,9 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Zone Collector"
+Title.Text = "Exzet Hub - Auto Detect Zone"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 15
+Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MINIMIZE & CLOSE BUTTONS
@@ -228,7 +227,7 @@ SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (Permanent No-Reset):"
+SpeedLabel.Text = "Kecepatan Jalan (Permanent Engine):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 11
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -278,23 +277,33 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- PLACE / ZONE FILTER + AUTO COLLECT
+-- DYNAMIC ZONE SCANNER CONTROLS
 -------------------------------------------------------------------
+local ScanMapZonesBtn = Instance.new("TextButton")
+ScanMapZonesBtn.Parent = MainPage
+ScanMapZonesBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 180)
+ScanMapZonesBtn.Position = UDim2.new(0, 0, 0, 45)
+ScanMapZonesBtn.Size = UDim2.new(0, 276, 0, 24)
+ScanMapZonesBtn.Font = Enum.Font.GothamBold
+ScanMapZonesBtn.Text = "🔍 Scan & Impor Lokasi Game"
+ScanMapZonesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ScanMapZonesBtn.TextSize = 11
+
 local ZoneSelectBtn = Instance.new("TextButton")
 ZoneSelectBtn.Parent = MainPage
-ZoneSelectBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-ZoneSelectBtn.Position = UDim2.new(0, 0, 0, 48)
-ZoneSelectBtn.Size = UDim2.new(0, 276, 0, 25)
+ZoneSelectBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
+ZoneSelectBtn.Position = UDim2.new(0, 0, 0, 72)
+ZoneSelectBtn.Size = UDim2.new(0, 276, 0, 24)
 ZoneSelectBtn.Font = Enum.Font.GothamBold
-ZoneSelectBtn.Text = "Lokasi Egg: [ ALL Zones ]"
+ZoneSelectBtn.Text = "Lokasi: [ SEMUA LOKASI ]"
 ZoneSelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ZoneSelectBtn.TextSize = 11
 
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
 SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 78)
-SetBaseBtn.Size = UDim2.new(0, 133, 0, 25)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 100)
+SetBaseBtn.Size = UDim2.new(0, 133, 0, 24)
 SetBaseBtn.Font = Enum.Font.GothamBold
 SetBaseBtn.Text = "1. Set Posisi Base"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -303,8 +312,8 @@ SetBaseBtn.TextSize = 10
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
 TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 78)
-TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 25)
+TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 100)
+TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 24)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
 TPBaseDirectBtn.Text = "TP Ke Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -313,7 +322,7 @@ TPBaseDirectBtn.TextSize = 10
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 108)
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 128)
 DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
 DisplayEggLabel.Font = Enum.Font.Gotham
 DisplayEggLabel.Text = "Status: Auto Collect Nonaktif"
@@ -324,63 +333,81 @@ DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
 local ToggleAutoCollectBtn = Instance.new("TextButton")
 ToggleAutoCollectBtn.Parent = MainPage
 ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleAutoCollectBtn.Position = UDim2.new(0, 0, 0, 130)
-ToggleAutoCollectBtn.Size = UDim2.new(0, 276, 0, 32)
+ToggleAutoCollectBtn.Position = UDim2.new(0, 0, 0, 148)
+ToggleAutoCollectBtn.Size = UDim2.new(0, 276, 0, 30)
 ToggleAutoCollectBtn.Font = Enum.Font.GothamBold
 ToggleAutoCollectBtn.Text = "AUTO COLLECT LOKASI INI: OFF"
 ToggleAutoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleAutoCollectBtn.TextSize = 11
 
 -------------------------------------------------------------------
--- SCANNER LOGIC BERDASARKAN LOKASI / PLACE
+-- DYNAMIC ZONE DETECTION & EGG ENGINE
 -------------------------------------------------------------------
-local function ScanAndFilterByZone()
-    scannedEggsList = {}
-    filteredEggsList = {}
-    local currentZoneFilter = zonesList[selectedZoneIndex]
+local function AutoDetectMapZones()
+    dynamicZonesList = {"[ SEMUA LOKASI ]"}
+    local addedZones = {}
 
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
             local n = string.lower(obj.Name)
-            local pN = string.lower(obj.Parent.Name)
-            local gpN = string.lower(obj.Parent.Parent and obj.Parent.Parent.Name or "")
+            local pN = obj.Parent and obj.Parent.Name or ""
+            local pN_lower = string.lower(pN)
 
-            -- Deteksi bahwa objek adalah Egg / Spawn Point Telur
-            if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN, "egg")) and not string.find(pN, "ui") then
+            -- Cek objek telur
+            if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN_lower, "egg")) and not string.find(pN_lower, "ui") then
+                local zoneCandidate = pN
+                if zoneCandidate ~= "" and zoneCandidate ~= "Workspace" and not addedZones[zoneCandidate] then
+                    addedZones[zoneCandidate] = true
+                    table.insert(dynamicZonesList, zoneCandidate)
+                end
+            end
+        end
+    end
+    
+    ScanMapZonesBtn.Text = "✅ Berhasil Deteksi " .. (#dynamicZonesList - 1) .. " Lokasi!"
+    task.wait(1.5)
+    ScanMapZonesBtn.Text = "🔍 Scan & Impor Lokasi Game"
+end
+
+local function FilterEggsByDynamicZone()
+    scannedEggsList = {}
+    filteredEggsList = {}
+    local currentZoneFilter = dynamicZonesList[selectedZoneIndex]
+
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            local n = string.lower(obj.Name)
+            local pN = obj.Parent and obj.Parent.Name or ""
+            local pN_lower = string.lower(pN)
+
+            if (string.find(n, "egg") or string.find(n, "spawn") or string.find(pN_lower, "egg")) and not string.find(pN_lower, "ui") then
                 table.insert(scannedEggsList, obj)
 
-                if currentZoneFilter == "ALL Zones" then
+                if currentZoneFilter == "[ SEMUA LOKASI ]" then
                     table.insert(filteredEggsList, obj)
                 else
-                    -- Filter lokasi berdasarkan nama folder / area tempat egg berada
-                    local zoneKeyword = ""
-                    if currentZoneFilter == "Zone 1 / Spawn" then zoneKeyword = "zone1"
-                    elseif currentZoneFilter == "Zone 2" then zoneKeyword = "zone2"
-                    elseif currentZoneFilter == "Zone 3" then zoneKeyword = "zone3"
-                    elseif currentZoneFilter == "Zone 4" then zoneKeyword = "zone4"
-                    elseif currentZoneFilter == "Secret / Island" then zoneKeyword = "secret" end
-
-                    if string.find(n, zoneKeyword) or string.find(pN, zoneKeyword) or string.find(gpN, zoneKeyword) then
-                        table.insert(filteredEggsList, obj)
-                    elseif currentZoneFilter == "Zone 1 / Spawn" and (string.find(pN, "spawn") or string.find(gpN, "spawn")) then
+                    if pN == currentZoneFilter or string.find(string.lower(pN), string.lower(currentZoneFilter)) then
                         table.insert(filteredEggsList, obj)
                     end
                 end
             end
         end
     end
-    
-    -- Jika di zona spesifik tidak ada kata kunci khusus, tampilkan semua egg terdekat dari zona tersebut
-    if #filteredEggsList == 0 and currentZoneFilter ~= "ALL Zones" then
+
+    if #filteredEggsList == 0 and currentZoneFilter ~= "[ SEMUA LOKASI ]" then
         filteredEggsList = scannedEggsList
     end
 end
 
+ScanMapZonesBtn.MouseButton1Click:Connect(function()
+    AutoDetectMapZones()
+end)
+
 ZoneSelectBtn.MouseButton1Click:Connect(function()
     selectedZoneIndex = selectedZoneIndex + 1
-    if selectedZoneIndex > #zonesList then selectedZoneIndex = 1 end
-    ZoneSelectBtn.Text = "Lokasi Egg: [ " .. zonesList[selectedZoneIndex] .. " ]"
-    ScanAndFilterByZone()
+    if selectedZoneIndex > #dynamicZonesList then selectedZoneIndex = 1 end
+    ZoneSelectBtn.Text = "Lokasi: [ " .. dynamicZonesList[selectedZoneIndex] .. " ]"
+    FilterEggsByDynamicZone()
 end)
 
 SetBaseBtn.MouseButton1Click:Connect(function()
@@ -410,18 +437,18 @@ ToggleAutoCollectBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO COLLECT MAIN LOOP ENGINE
+-- AUTO COLLECT LOOP
 task.spawn(function()
     while task.wait(0.35) do
         if isAutoCollectActive then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                ScanAndFilterByZone()
+                FilterEggsByDynamicZone()
 
                 if #filteredEggsList > 0 then
                     local targetEgg = filteredEggsList[1]
-                    DisplayEggLabel.Text = "Sedang Ambil: " .. targetEgg.Name .. " [" .. zonesList[selectedZoneIndex] .. "]"
+                    DisplayEggLabel.Text = "Mengambil: " .. targetEgg.Name .. " [" .. dynamicZonesList[selectedZoneIndex] .. "]"
 
                     local targetCFrame = nil
                     if targetEgg:IsA("BasePart") then targetCFrame = targetEgg.CFrame
@@ -429,10 +456,10 @@ task.spawn(function()
                     elseif targetEgg:IsA("Model") and targetEgg:FindFirstChildWhichIsA("BasePart") then targetCFrame = targetEgg:FindFirstChildWhichIsA("BasePart").CFrame end
 
                     if targetCFrame then
-                        -- 1. Teleport ke Telur
+                        -- 1. Teleport ke Egg
                         hrp.CFrame = targetCFrame + Vector3.new(0, 2.5, 0)
 
-                        -- 2. Ambil Egg (Tekan ProximityPrompt / E)
+                        -- 2. Trigger ProximityPrompt / Ambil
                         for _, prompt in pairs(targetEgg:GetDescendants()) do
                             if prompt:IsA("ProximityPrompt") then
                                 fireproximityprompt(prompt)
@@ -440,14 +467,14 @@ task.spawn(function()
                         end
                         task.wait(0.3)
 
-                        -- 3. Teleport Langsung Balik ke Base
+                        -- 3. Teleport Kembali Ke Base
                         if myBasePosition and isAutoCollectActive then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                             task.wait(0.35)
                         end
                     end
                 else
-                    DisplayEggLabel.Text = "Mencari Egg di " .. zonesList[selectedZoneIndex] .. "..."
+                    DisplayEggLabel.Text = "Mencari Egg..."
                 end
             end
         end
@@ -455,7 +482,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------------------------
--- PERMANENT SPEED BYPASS (PERSISTENT ON DEATH)
+-- PERMANENT SPEED BYPASS ENGINE
 -------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
