@@ -1,4 +1,4 @@
--- [[ EXZET HUB - FIXED MINIMIZE "XZ" & ANTI-RUBBERBAND SPEED ]] --
+-- [[ EXZET HUB - ADVANCED Rarity EGG FINDER & ANTI-RUBBERBAND SPEED ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -7,20 +7,24 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- State Variables
+-- Variables
 local defaultSpeed = 16
 local customSpeed = 16
 local isSpeedActive = false
-local defaultJump = 50
+
 local customJump = 50
 local isJumpActive = false
 
 local isAutoEggActive = false
 local myBasePosition = nil
 local scannedEggsList = {}
+local filteredEggsList = {}
 local selectedEggIndex = 1
 
--- Destroy Old UI
+local rarities = {"ALL", "Common", "Rare", "Epic", "Legendary", "Mythic", "Divine"}
+local selectedRarityIndex = 1
+
+-- Cleanup Old UI
 if CoreGui:FindFirstChild("ExzetHubUI") then
     CoreGui.ExzetHubUI:Destroy()
 end
@@ -64,8 +68,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
-MainFrame.Size = UDim2.new(0, 450, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -165)
+MainFrame.Size = UDim2.new(0, 450, 0, 330)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -139,7 +143,7 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseBtn
 
--- LOGIKA TOGGLE MINIMIZE & RESTORE ("XZ")
+-- TOGGLE LOGIC MINIMIZE
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
     ToggleIconBtn.Visible = true
@@ -152,11 +156,6 @@ end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     ExzetHubUI:Destroy()
-    StarterGui:SetCore("SendNotification", {
-        Title = "Exzet Hub",
-        Text = "UI Ditutup! Silakan re-execute jika ingin membuka kembali.",
-        Duration = 4
-    })
 end)
 
 -------------------------------------------------------------------
@@ -195,14 +194,13 @@ local MainTabCorner = Instance.new("UICorner")
 MainTabCorner.CornerRadius = UDim.new(0, 6)
 MainTabCorner.Parent = MainTabBtn
 
--- CONTENT CONTAINER
+-- PAGES
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 115, 0, 45)
 ContentContainer.Size = UDim2.new(1, -125, 1, -50)
 
--- PAGE 1: INFO
 local InfoPage = Instance.new("Frame")
 InfoPage.Parent = ContentContainer
 InfoPage.BackgroundTransparency = 1
@@ -219,7 +217,6 @@ CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreatorLabel.TextSize = 14
 CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- PAGE 2: MAIN
 local MainPage = Instance.new("Frame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
@@ -227,13 +224,13 @@ MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
 -------------------------------------------------------------------
--- FITUR SPEED BYPASS (ANTI-RUBBERBAND / ANTI MUNDUR)
+-- SPEED BYPASS ENGINE (SMOOTH NO-RUBBERBAND)
 -------------------------------------------------------------------
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
 SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
-SpeedLabel.Size = UDim2.new(1, 0, 0, 16)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
 SpeedLabel.Text = "Kecepatan Jalan (Speed Bypass):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -243,8 +240,8 @@ SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 local SpeedInput = Instance.new("TextBox")
 SpeedInput.Parent = MainPage
 SpeedInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-SpeedInput.Position = UDim2.new(0, 0, 0, 18)
-SpeedInput.Size = UDim2.new(0, 90, 0, 24)
+SpeedInput.Position = UDim2.new(0, 0, 0, 16)
+SpeedInput.Size = UDim2.new(0, 90, 0, 22)
 SpeedInput.Font = Enum.Font.Gotham
 SpeedInput.PlaceholderText = "300"
 SpeedInput.Text = ""
@@ -253,8 +250,8 @@ SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 local SpeedApplyBtn = Instance.new("TextButton")
 SpeedApplyBtn.Parent = MainPage
 SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SpeedApplyBtn.Position = UDim2.new(0, 95, 0, 18)
-SpeedApplyBtn.Size = UDim2.new(0, 75, 0, 24)
+SpeedApplyBtn.Position = UDim2.new(0, 95, 0, 16)
+SpeedApplyBtn.Size = UDim2.new(0, 75, 0, 22)
 SpeedApplyBtn.Font = Enum.Font.GothamBold
 SpeedApplyBtn.Text = "Set Speed"
 SpeedApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -263,16 +260,12 @@ SpeedApplyBtn.TextSize = 10
 local SpeedResetBtn = Instance.new("TextButton")
 SpeedResetBtn.Parent = MainPage
 SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-SpeedResetBtn.Position = UDim2.new(0, 174, 0, 18)
-SpeedResetBtn.Size = UDim2.new(0, 102, 0, 24)
+SpeedResetBtn.Position = UDim2.new(0, 174, 0, 16)
+SpeedResetBtn.Size = UDim2.new(0, 102, 0, 22)
 SpeedResetBtn.Font = Enum.Font.GothamBold
 SpeedResetBtn.Text = "Reset Speed"
 SpeedResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedResetBtn.TextSize = 10
-
-local ResetCorner = Instance.new("UICorner")
-ResetCorner.CornerRadius = UDim.new(0, 4)
-ResetCorner.Parent = SpeedResetBtn
 
 SpeedApplyBtn.MouseButton1Click:Connect(function()
     local num = tonumber(SpeedInput.Text)
@@ -289,90 +282,42 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- JUMP HEIGHT
+-- EGG FINDER WITH RARITY FILTER
 -------------------------------------------------------------------
-local JumpLabel = Instance.new("TextLabel")
-JumpLabel.Parent = MainPage
-JumpLabel.BackgroundTransparency = 1
-JumpLabel.Position = UDim2.new(0, 0, 0, 46)
-JumpLabel.Size = UDim2.new(1, 0, 0, 16)
-JumpLabel.Font = Enum.Font.GothamBold
-JumpLabel.Text = "Tinggi Lompatan (JumpHeight):"
-JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpLabel.TextSize = 11
-JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+local RaritySelectBtn = Instance.new("TextButton")
+RaritySelectBtn.Parent = MainPage
+RaritySelectBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 180)
+RaritySelectBtn.Position = UDim2.new(0, 0, 0, 45)
+RaritySelectBtn.Size = UDim2.new(0, 276, 0, 24)
+RaritySelectBtn.Font = Enum.Font.GothamBold
+RaritySelectBtn.Text = "Filter Rarity: [ ALL ]"
+RaritySelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RaritySelectBtn.TextSize = 11
 
-local JumpInput = Instance.new("TextBox")
-JumpInput.Parent = MainPage
-JumpInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-JumpInput.Position = UDim2.new(0, 0, 0, 64)
-JumpInput.Size = UDim2.new(0, 90, 0, 24)
-JumpInput.Font = Enum.Font.Gotham
-JumpInput.PlaceholderText = "Default: 50"
-JumpInput.Text = ""
-JumpInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-local JumpApplyBtn = Instance.new("TextButton")
-JumpApplyBtn.Parent = MainPage
-JumpApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-JumpApplyBtn.Position = UDim2.new(0, 95, 0, 64)
-JumpApplyBtn.Size = UDim2.new(0, 75, 0, 24)
-JumpApplyBtn.Font = Enum.Font.GothamBold
-JumpApplyBtn.Text = "Set Jump"
-JumpApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpApplyBtn.TextSize = 10
-
-local JumpResetBtn = Instance.new("TextButton")
-JumpResetBtn.Parent = MainPage
-JumpResetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-JumpResetBtn.Position = UDim2.new(0, 174, 0, 64)
-JumpResetBtn.Size = UDim2.new(0, 102, 0, 24)
-JumpResetBtn.Font = Enum.Font.GothamBold
-JumpResetBtn.Text = "Reset Jump"
-JumpResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpResetBtn.TextSize = 10
-
-JumpApplyBtn.MouseButton1Click:Connect(function()
-    local num = tonumber(JumpInput.Text)
-    if num then customJump = num; isJumpActive = true end
-end)
-
-JumpResetBtn.MouseButton1Click:Connect(function()
-    isJumpActive = false
-    JumpInput.Text = ""
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.JumpPower = 50
-        LocalPlayer.Character.Humanoid.JumpHeight = 7.2
-    end
-end)
-
--------------------------------------------------------------------
--- STEAL AN EGG & TELEPORT ENGINE
--------------------------------------------------------------------
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
 SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 95)
-SetBaseBtn.Size = UDim2.new(0, 130, 0, 26)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 74)
+SetBaseBtn.Size = UDim2.new(0, 133, 0, 24)
 SetBaseBtn.Font = Enum.Font.GothamBold
-SetBaseBtn.Text = "1. Simpan Base"
+SetBaseBtn.Text = "1. Simpan Posisi Base"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SetBaseBtn.TextSize = 10
 
 local ScanBtn = Instance.new("TextButton")
 ScanBtn.Parent = MainPage
 ScanBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-ScanBtn.Position = UDim2.new(0, 136, 0, 95)
-ScanBtn.Size = UDim2.new(0, 140, 0, 26)
+ScanBtn.Position = UDim2.new(0, 138, 0, 74)
+ScanBtn.Size = UDim2.new(0, 138, 0, 24)
 ScanBtn.Font = Enum.Font.GothamBold
-ScanBtn.Text = "2. Pindai Telur (Scan)"
+ScanBtn.Text = "2. Scan Egg"
 ScanBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ScanBtn.TextSize = 10
 
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 125)
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 102)
 DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
 DisplayEggLabel.Font = Enum.Font.Gotham
 DisplayEggLabel.Text = "Target: [ Belum Dipindai ]"
@@ -383,27 +328,27 @@ DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
 local SelectTargetBtn = Instance.new("TextButton")
 SelectTargetBtn.Parent = MainPage
 SelectTargetBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-SelectTargetBtn.Position = UDim2.new(0, 0, 0, 144)
-SelectTargetBtn.Size = UDim2.new(0, 276, 0, 25)
+SelectTargetBtn.Position = UDim2.new(0, 0, 0, 120)
+SelectTargetBtn.Size = UDim2.new(0, 276, 0, 24)
 SelectTargetBtn.Font = Enum.Font.GothamBold
-SelectTargetBtn.Text = "Ganti Target Telur (Klik)"
+SelectTargetBtn.Text = "Ganti Target Egg (Next)"
 SelectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SelectTargetBtn.TextSize = 10
 
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
 TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 0, 0, 174)
+TPBaseDirectBtn.Position = UDim2.new(0, 0, 0, 149)
 TPBaseDirectBtn.Size = UDim2.new(0, 133, 0, 26)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
-TPBaseDirectBtn.Text = "TP Langsung Ke Base"
+TPBaseDirectBtn.Text = "TP Ke Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TPBaseDirectBtn.TextSize = 10
 
 local ToggleEggBtn = Instance.new("TextButton")
 ToggleEggBtn.Parent = MainPage
 ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleEggBtn.Position = UDim2.new(0, 138, 0, 174)
+ToggleEggBtn.Position = UDim2.new(0, 138, 0, 149)
 ToggleEggBtn.Size = UDim2.new(0, 138, 0, 26)
 ToggleEggBtn.Font = Enum.Font.GothamBold
 ToggleEggBtn.Text = "Auto Egg Loop: OFF"
@@ -411,8 +356,39 @@ ToggleEggBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleEggBtn.TextSize = 10
 
 -------------------------------------------------------------------
--- SCANNER & TELEPORT LOGIC ENGINE
+-- SCANNER & FILTERING LOGIC ENGINE
 -------------------------------------------------------------------
+local function FilterEggsByRarity()
+    filteredEggsList = {}
+    local chosenRarity = rarities[selectedRarityIndex]
+    
+    for _, eggObj in ipairs(scannedEggsList) do
+        if eggObj and eggObj.Parent then
+            local objName = string.lower(eggObj.Name)
+            local parentName = string.lower(eggObj.Parent.Name)
+            local rName = string.lower(chosenRarity)
+            
+            if chosenRarity == "ALL" then
+                table.insert(filteredEggsList, eggObj)
+            else
+                -- Check if name contains rarity keyword or has attribute
+                if string.find(objName, rName) or string.find(parentName, rName) then
+                    table.insert(filteredEggsList, eggObj)
+                elseif eggObj:GetAttribute("Rarity") and string.lower(tostring(eggObj:GetAttribute("Rarity"))) == rName then
+                    table.insert(filteredEggsList, eggObj)
+                end
+            end
+        end
+    end
+    
+    if #filteredEggsList > 0 then
+        selectedEggIndex = 1
+        DisplayEggLabel.Text = "Target (#1/" .. #filteredEggsList .. "): " .. filteredEggsList[1].Name
+    else
+        DisplayEggLabel.Text = "Target: [ 0 Egg Rarity " .. chosenRarity .. " ]"
+    end
+end
+
 local function ScanWorkspaceForEggs()
     scannedEggsList = {}
     for _, obj in pairs(Workspace:GetDescendants()) do
@@ -424,40 +400,39 @@ local function ScanWorkspaceForEggs()
             end
         end
     end
-    
-    if #scannedEggsList > 0 then
-        selectedEggIndex = 1
-        DisplayEggLabel.Text = "Target (#1/" .. #scannedEggsList .. "): " .. scannedEggsList[1].Name
-    else
-        DisplayEggLabel.Text = "Target: [ Tidak Ada Telur Ditemukan ]"
-    end
+    FilterEggsByRarity()
 end
+
+RaritySelectBtn.MouseButton1Click:Connect(function()
+    selectedRarityIndex = selectedRarityIndex + 1
+    if selectedRarityIndex > #rarities then selectedRarityIndex = 1 end
+    RaritySelectBtn.Text = "Filter Rarity: [ " .. rarities[selectedRarityIndex] .. " ]"
+    FilterEggsByRarity()
+end)
 
 SetBaseBtn.MouseButton1Click:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
         SetBaseBtn.Text = "Base Tersimpan!"
-        task.wait(1.2)
-        SetBaseBtn.Text = "1. Simpan Base"
+        task.wait(1)
+        SetBaseBtn.Text = "1. Simpan Posisi Base"
     end
 end)
 
 ScanBtn.MouseButton1Click:Connect(function()
     ScanWorkspaceForEggs()
-    ScanBtn.Text = "Dipindai (" .. #scannedEggsList .. ")"
+    ScanBtn.Text = "Pindai Selesai (" .. #filteredEggsList .. ")"
     task.wait(1)
-    ScanBtn.Text = "2. Pindai Telur (Scan)"
+    ScanBtn.Text = "2. Scan Egg"
 end)
 
 SelectTargetBtn.MouseButton1Click:Connect(function()
-    if #scannedEggsList > 0 then
+    if #filteredEggsList > 0 then
         selectedEggIndex = selectedEggIndex + 1
-        if selectedEggIndex > #scannedEggsList then
-            selectedEggIndex = 1
-        end
-        local currentObj = scannedEggsList[selectedEggIndex]
+        if selectedEggIndex > #filteredEggsList then selectedEggIndex = 1 end
+        local currentObj = filteredEggsList[selectedEggIndex]
         if currentObj and currentObj.Parent then
-            DisplayEggLabel.Text = "Target (#" .. selectedEggIndex .. "/" .. #scannedEggsList .. "): " .. currentObj.Name
+            DisplayEggLabel.Text = "Target (#" .. selectedEggIndex .. "/" .. #filteredEggsList .. "): " .. currentObj.Name
         else
             ScanWorkspaceForEggs()
         end
@@ -483,16 +458,16 @@ ToggleEggBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO EGG TELEPORT LOOP (SAFE ANTI-TEMBUS)
+-- AUTO LOOP
 task.spawn(function()
-    while task.wait(0.6) do
+    while task.wait(0.5) do
         if isAutoEggActive then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                if #scannedEggsList == 0 then ScanWorkspaceForEggs() end
+                if #filteredEggsList == 0 then ScanWorkspaceForEggs() end
                 
-                local targetEgg = scannedEggsList[selectedEggIndex]
+                local targetEgg = filteredEggsList[selectedEggIndex]
                 if targetEgg and targetEgg.Parent then
                     local targetCFrame = nil
                     if targetEgg:IsA("BasePart") then targetCFrame = targetEgg.CFrame
@@ -500,15 +475,11 @@ task.spawn(function()
                     elseif targetEgg:IsA("Model") and targetEgg:FindFirstChildWhichIsA("BasePart") then targetCFrame = targetEgg:FindFirstChildWhichIsA("BasePart").CFrame end
                     
                     if targetCFrame then
-                        -- Safe Teleport ke Telur
                         hrp.CFrame = targetCFrame + Vector3.new(0, 2.5, 0)
-                        
                         for _, child in pairs(targetEgg:GetDescendants()) do
                             if child:IsA("ProximityPrompt") then fireproximityprompt(child) end
                         end
                         task.wait(0.4)
-                        
-                        -- Safe Teleport Balik Ke Base
                         if myBasePosition and isAutoEggActive then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                             task.wait(0.4)
@@ -522,34 +493,23 @@ task.spawn(function()
     end
 end)
 
--------------------------------------------------------------------
--- CFrame SPEED BYPASS ENGINE (ANTI-RUBBERBAND / MUNDUR)
--------------------------------------------------------------------
+-- CFrame Movement Engine (Mencegah Rubberband / Kena Tarik Server)
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
         local hum = char.Humanoid
         local hrp = char.HumanoidRootPart
         
-        -- WalkSpeed Bypass Engine (CFrame offset)
         if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
-            local speedMultiplier = (customSpeed / 16) - 1
-            if speedMultiplier > 0 then
-                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedMultiplier * 0.28))
+            local speedFactor = (customSpeed / 16) - 1
+            if speedFactor > 0 then
+                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedFactor * 0.25))
             end
-        end
-        
-        -- Jump Power Engine
-        if isJumpActive then
-            hum.UseJumpPower = true
-            hum.JumpPower = customJump
         end
     end
 end)
 
--------------------------------------------------------------------
--- TAB LOGIC
--------------------------------------------------------------------
+-- Tab Switch
 InfoTabBtn.MouseButton1Click:Connect(function()
     InfoPage.Visible = true; MainPage.Visible = false
     InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
