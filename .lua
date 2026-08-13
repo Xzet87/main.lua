@@ -1,6 +1,8 @@
--- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT TOPBAR CORNERS FIX) ]] --
+-- [[ EXZET HUB - MAIN TAB FEATURES (WALKSPEED & JUMPHEIGHT) ]] --
 
 local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
 -- Hapus UI lama jika ada
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -18,7 +20,7 @@ local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.BackgroundTransparency = 0.25 -- Transparansi Aman!
+MainFrame.BackgroundTransparency = 0.25
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
 MainFrame.Active = true
@@ -28,7 +30,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Gradient Merah ke Hitam untuk MainFrame
 local MainGradient = Instance.new("UIGradient")
 MainGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
@@ -43,7 +44,7 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER (LENGKUNG RAFI DENGAN UICORNER KHUSUS)
+-- TOPBAR / HEADER
 -------------------------------------------------------------------
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
@@ -54,12 +55,10 @@ Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 40)
 Topbar.ZIndex = 2
 
--- Melengkungkan sudut atas Topbar agar pas dengan MainFrame
 local TopbarCorner = Instance.new("UICorner")
 TopbarCorner.CornerRadius = UDim.new(0, 12)
 TopbarCorner.Parent = Topbar
 
--- Menutup bagian bawah Topbar agar tetap lurus (tidak melengkung di bagian dalam)
 local TopbarBottomFill = Instance.new("Frame")
 TopbarBottomFill.Name = "BottomFill"
 TopbarBottomFill.Parent = Topbar
@@ -70,7 +69,6 @@ TopbarBottomFill.Position = UDim2.new(0, 0, 0, 20)
 TopbarBottomFill.Size = UDim2.new(1, 0, 0, 20)
 TopbarBottomFill.ZIndex = 2
 
--- Title "Exzet Hub" di kiri atas
 local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
@@ -183,25 +181,164 @@ DiscordBtn.MouseButton1Click:Connect(function()
     DiscordBtn.Text = "Salin Link Discord"
 end)
 
--- PAGE MAIN (KOSONG)
+-------------------------------------------------------------------
+-- PAGE MAIN (WALKSPEED & JUMPHEIGHT)
+-------------------------------------------------------------------
 local MainPage = Instance.new("Frame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
-local EmptyLabel = Instance.new("TextLabel")
-EmptyLabel.Parent = MainPage
-EmptyLabel.BackgroundTransparency = 1
-EmptyLabel.Position = UDim2.new(0, 0, 0, 10)
-EmptyLabel.Size = UDim2.new(1, 0, 0, 30)
-EmptyLabel.Font = Enum.Font.Gotham
-EmptyLabel.Text = "Fitur Main masih kosong..."
-EmptyLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-EmptyLabel.TextSize = 14
-EmptyLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- FITUR 1: WALKSPEED
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Parent = MainPage
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Position = UDim2.new(0, 0, 0, 5)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
+SpeedLabel.Font = Enum.Font.GothamBold
+SpeedLabel.Text = "Kecepatan Jalan (WalkSpeed):"
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedLabel.TextSize = 13
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+local SpeedInput = Instance.new("TextBox")
+SpeedInput.Parent = MainPage
+SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SpeedInput.Position = UDim2.new(0, 0, 0, 30)
+SpeedInput.Size = UDim2.new(0, 120, 0, 30)
+SpeedInput.Font = Enum.Font.Gotham
+SpeedInput.PlaceholderText = "Default: 16"
+SpeedInput.Text = ""
+SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedInput.TextSize = 13
+
+local SpeedInputCorner = Instance.new("UICorner")
+SpeedInputCorner.CornerRadius = UDim.new(0, 6)
+SpeedInputCorner.Parent = SpeedInput
+
+local SpeedApplyBtn = Instance.new("TextButton")
+SpeedApplyBtn.Parent = MainPage
+SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+SpeedApplyBtn.Position = UDim2.new(0, 130, 0, 30)
+SpeedApplyBtn.Size = UDim2.new(0, 80, 0, 30)
+SpeedApplyBtn.Font = Enum.Font.GothamBold
+SpeedApplyBtn.Text = "Set Speed"
+SpeedApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedApplyBtn.TextSize = 12
+
+local SpeedApplyCorner = Instance.new("UICorner")
+SpeedApplyCorner.CornerRadius = UDim.new(0, 6)
+SpeedApplyCorner.Parent = SpeedApplyBtn
+
+local SpeedResetBtn = Instance.new("TextButton")
+SpeedResetBtn.Parent = MainPage
+SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedResetBtn.Position = UDim2.new(0, 220, 0, 30)
+SpeedResetBtn.Size = UDim2.new(0, 70, 0, 30)
+SpeedResetBtn.Font = Enum.Font.GothamBold
+SpeedResetBtn.Text = "Reset"
+SpeedResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedResetBtn.TextSize = 12
+
+local SpeedResetCorner = Instance.new("UICorner")
+SpeedResetCorner.CornerRadius = UDim.new(0, 6)
+SpeedResetCorner.Parent = SpeedResetBtn
+
+-- LOGIC WALKSPEED
+SpeedApplyBtn.MouseButton1Click:Connect(function()
+    local num = tonumber(SpeedInput.Text)
+    if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = num
+    end
+end)
+
+SpeedResetBtn.MouseButton1Click:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
+        SpeedInput.Text = ""
+    end
+end)
+
+-- FITUR 2: JUMPHEIGHT / JUMPPOWER
+local JumpLabel = Instance.new("TextLabel")
+JumpLabel.Parent = MainPage
+JumpLabel.BackgroundTransparency = 1
+JumpLabel.Position = UDim2.new(0, 0, 0, 75)
+JumpLabel.Size = UDim2.new(1, 0, 0, 20)
+JumpLabel.Font = Enum.Font.GothamBold
+JumpLabel.Text = "Tinggi Lompatan (JumpHeight):"
+JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpLabel.TextSize = 13
+JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local JumpInput = Instance.new("TextBox")
+JumpInput.Parent = MainPage
+JumpInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+JumpInput.Position = UDim2.new(0, 0, 0, 100)
+JumpInput.Size = UDim2.new(0, 120, 0, 30)
+JumpInput.Font = Enum.Font.Gotham
+JumpInput.PlaceholderText = "Default: 50"
+JumpInput.Text = ""
+JumpInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpInput.TextSize = 13
+
+local JumpInputCorner = Instance.new("UICorner")
+JumpInputCorner.CornerRadius = UDim.new(0, 6)
+JumpInputCorner.Parent = JumpInput
+
+local JumpApplyBtn = Instance.new("TextButton")
+JumpApplyBtn.Parent = MainPage
+JumpApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+JumpApplyBtn.Position = UDim2.new(0, 130, 0, 100)
+JumpApplyBtn.Size = UDim2.new(0, 80, 0, 30)
+JumpApplyBtn.Font = Enum.Font.GothamBold
+JumpApplyBtn.Text = "Set Jump"
+JumpApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpApplyBtn.TextSize = 12
+
+local JumpApplyCorner = Instance.new("UICorner")
+JumpApplyCorner.CornerRadius = UDim.new(0, 6)
+JumpApplyCorner.Parent = JumpApplyBtn
+
+local JumpResetBtn = Instance.new("TextButton")
+JumpResetBtn.Parent = MainPage
+JumpResetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+JumpResetBtn.Position = UDim2.new(0, 220, 0, 100)
+JumpResetBtn.Size = UDim2.new(0, 70, 0, 30)
+JumpResetBtn.Font = Enum.Font.GothamBold
+JumpResetBtn.Text = "Reset"
+JumpResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpResetBtn.TextSize = 12
+
+local JumpResetCorner = Instance.new("UICorner")
+JumpResetCorner.CornerRadius = UDim.new(0, 6)
+JumpResetCorner.Parent = JumpResetBtn
+
+-- LOGIC JUMPHEIGHT & JUMPPOWER (Auto detect mana yang dipakai game)
+JumpApplyBtn.MouseButton1Click:Connect(function()
+    local num = tonumber(JumpInput.Text)
+    if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local hum = LocalPlayer.Character.Humanoid
+        hum.UseJumpPower = true
+        hum.JumpPower = num
+        hum.JumpHeight = num
+    end
+end)
+
+JumpResetBtn.MouseButton1Click:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local hum = LocalPlayer.Character.Humanoid
+        hum.UseJumpPower = true
+        hum.JumpPower = 50
+        hum.JumpHeight = 7.2
+        JumpInput.Text = ""
+    end
+end)
+
+-------------------------------------------------------------------
 -- TABS SWITCHING LOGIC
+-------------------------------------------------------------------
 InfoTabBtn.MouseButton1Click:Connect(function()
     InfoPage.Visible = true
     MainPage.Visible = false
@@ -225,10 +362,10 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE XZ & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE & CLOSE CONFIRMATION)
 -------------------------------------------------------------------
 
--- Floating Button Minimize (Kotak Merah Gradasi)
+-- Floating Button Minimize (XZ)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
@@ -257,7 +394,6 @@ MinStroke.Parent = MinimizeBox
 MinStroke.Color = Color3.fromRGB(255, 50, 50)
 MinStroke.Thickness = 1.5
 
--- TEKS "XZ"
 local MinText = Instance.new("TextLabel")
 MinText.Name = "MinText"
 MinText.Parent = MinimizeBox
