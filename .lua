@@ -1,4 +1,4 @@
--- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT CANVASGROUP FIX) ]] --
+-- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT TOPBAR & TEXT FIX) ]] --
 
 local CoreGui = game:GetService("CoreGui")
 
@@ -13,12 +13,12 @@ ExzetHubUI.Name = "ExzetHubUI"
 ExzetHubUI.Parent = CoreGui
 ExzetHubUI.ResetOnSpawn = false
 
--- CanvasGroup Utama (Memotong SEMUA sudut child dengan sempurna tanpa siku lancip bocor)
-local MainFrame = Instance.new("CanvasGroup")
+-- Frame Utama (Window)
+local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.GroupTransparency = 0
+MainFrame.BackgroundTransparency = 0.25
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
 MainFrame.Active = true
@@ -43,16 +43,30 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER (LENGKUNG PERFEK MENGIKUTI CANVASGROUP)
+-- TOPBAR / HEADER (LENGKUNG ATAS RAFI, BAWAH RATA)
 -------------------------------------------------------------------
-local Topbar = Instance.new("Frame")
+local Topbar = Instance.new("CanvasGroup")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
 Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Topbar.BackgroundTransparency = 0.5
+Topbar.GroupTransparency = 0.5 -- Menjaga transparansi hitam merata
 Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 40)
 Topbar.ZIndex = 2
+
+-- Melengkungkan sudut atas Topbar
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 12)
+TopbarCorner.Parent = Topbar
+
+-- Penambal bawah agar bagian bawah Topbar tetap lurus (tidak melengkung di dalam)
+TopbarBottomFill = Instance.new("Frame")
+TopbarBottomFill.Name = "BottomFill"
+TopbarBottomFill.Parent = Topbar
+TopbarBottomFill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopbarBottomFill.BorderSizePixel = 0
+TopbarBottomFill.Position = UDim2.new(0, 0, 0, 20)
+TopbarBottomFill.Size = UDim2.new(1, 0, 0, 20)
 
 -- Title "Exzet Hub" di kiri atas
 local Title = Instance.new("TextLabel")
@@ -209,20 +223,17 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE DENGAN HURUF XZ)
+-- CONTROL BUTTONS (MINIMIZE XZ & CLOSE CONFIRMATION)
 -------------------------------------------------------------------
 
--- Floating Button Minimize (Dengan Huruf XZ)
+-- Floating Button Minimize
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
 MinimizeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.Position = UDim2.new(0.02, 0, 0.2, 0)
 MinimizeBox.Size = UDim2.new(0, 42, 0, 42)
-MinimizeBox.Font = Enum.Font.GothamBold
-MinimizeBox.Text = "XZ" -- HURUF XZ SUDAH DITAMBAHKAN
-MinimizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBox.TextSize = 16
+MinimizeBox.Text = "" -- TextButton dibikin kosong
 MinimizeBox.Active = true
 MinimizeBox.Draggable = true
 MinimizeBox.Visible = false
@@ -243,6 +254,18 @@ local MinStroke = Instance.new("UIStroke")
 MinStroke.Parent = MinimizeBox
 MinStroke.Color = Color3.fromRGB(255, 50, 50)
 MinStroke.Thickness = 1.5
+
+-- TextLabel Khusus untuk Huruf "XZ" (Dijamin Muncul Terang di Atas Gradasi)
+local MinText = Instance.new("TextLabel")
+MinText.Name = "MinText"
+MinText.Parent = MinimizeBox
+MinText.BackgroundTransparency = 1
+MinText.Size = UDim2.new(1, 0, 1, 0)
+MinText.Font = Enum.Font.GothamBold
+MinText.Text = "XZ"
+MinText.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinText.TextSize = 16
+MinText.ZIndex = 10
 
 -- Tombol Minimize (-) di Topbar
 local MinBtn = Instance.new("TextButton")
