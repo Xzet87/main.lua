@@ -1,4 +1,4 @@
--- [[ EXZET HUB - ULTIMATE FLEXIBLE EGG STEALER ]] --
+-- [[ EXZET HUB - SIMPLE AUTO RARITY STEALER ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -13,7 +13,7 @@ local isSpeedActive = false
 
 local isAutoStealActive = false
 local myBasePosition = nil
-local selectedTarget = "All" -- Bisa All, Egg 1, Egg 2, dll
+local selectedRarity = "All" -- Langsung pilih rarity tujuan
 
 -- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -100,7 +100,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Flexible Stealer Fix"
+Title.Text = "Exzet Hub - Simple Rarity Stealer"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -272,47 +272,35 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- SELECTOR TARGET EGG (FLEXIBLE)
+-- SIMPLE RARITY SELECTOR BUTTON
 -------------------------------------------------------------------
-local targets = {"All", "Area 1", "Area 2", "Area 3", "Area 4"}
-local currentIndex = 1
+local rarities = {"All", "Common", "Rare", "Epic", "Legendary", "Mythic", "Secret"}
+local rarityIndex = 1
 
-local TargetBtn = Instance.new("TextButton")
-TargetBtn.Parent = MainPage
-TargetBtn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
-TargetBtn.Position = UDim2.new(0, 0, 0, 48)
-TargetBtn.Size = UDim2.new(0, 276, 0, 26)
-TargetBtn.Font = Enum.Font.GothamBold
-TargetBtn.Text = "Target Filter: [ All Eggs ] (Klik Ganti)"
-TargetBtn.TextColor3 = Color3.fromRGB(0, 230, 255)
-TargetBtn.TextSize = 10
+local RarityBtn = Instance.new("TextButton")
+RarityBtn.Parent = MainPage
+RarityBtn.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+RarityBtn.Position = UDim2.new(0, 0, 0, 48)
+RarityBtn.Size = UDim2.new(0, 276, 0, 26)
+RarityBtn.Font = Enum.Font.GothamBold
+RarityBtn.Text = "Pilih Rarity: [ All ] (Klik untuk Ganti)"
+RarityBtn.TextColor3 = Color3.fromRGB(0, 230, 255)
+RarityBtn.TextSize = 10
 
-local TPEggPlaceBtn = Instance.new("TextButton")
-TPEggPlaceBtn.Parent = MainPage
-TPEggPlaceBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 180)
-TPEggPlaceBtn.Position = UDim2.new(0, 0, 0, 78)
-TPEggPlaceBtn.Size = UDim2.new(0, 276, 0, 26)
-TPEggPlaceBtn.Font = Enum.Font.GothamBold
-TPEggPlaceBtn.Text = "TP Ke Lokasi Egg Terdekat"
-TPEggPlaceBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TPEggPlaceBtn.TextSize = 10
-
-TargetBtn.MouseButton1Click:Connect(function()
-    currentIndex = currentIndex + 1
-    if currentIndex > #targets then
-        currentIndex = 1
-    end
-    selectedTarget = targets[currentIndex]
-    TargetBtn.Text = "Target Filter: [ " .. selectedTarget .. " ] (Klik Ganti)"
+RarityBtn.MouseButton1Click:Connect(function()
+    rarityIndex = rarityIndex + 1
+    if rarityIndex > #rarities then rarityIndex = 1 end
+    selectedRarity = rarities[rarityIndex]
+    RarityBtn.Text = "Pilih Rarity: [ " .. selectedRarity .. " ] (Klik untuk Ganti)"
 end)
 
 -------------------------------------------------------------------
--- STEAL EGG CONTROLS & BASE SETUP
+-- BASE SETUP & CONTROLS
 -------------------------------------------------------------------
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
 SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 110)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 80)
 SetBaseBtn.Size = UDim2.new(0, 133, 0, 26)
 SetBaseBtn.Font = Enum.Font.GothamBold
 SetBaseBtn.Text = "1. Set Posisi Base"
@@ -322,7 +310,7 @@ SetBaseBtn.TextSize = 10
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
 TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 110)
+TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 80)
 TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 26)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
 TPBaseDirectBtn.Text = "TP Ke Base"
@@ -332,7 +320,7 @@ TPBaseDirectBtn.TextSize = 10
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 142)
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 112)
 DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
 DisplayEggLabel.Font = Enum.Font.Gotham
 DisplayEggLabel.Text = "Status: Nonaktif"
@@ -343,10 +331,10 @@ DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
 local ToggleAutoStealBtn = Instance.new("TextButton")
 ToggleAutoStealBtn.Parent = MainPage
 ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleAutoStealBtn.Position = UDim2.new(0, 0, 0, 164)
+ToggleAutoStealBtn.Position = UDim2.new(0, 0, 0, 134)
 ToggleAutoStealBtn.Size = UDim2.new(0, 276, 0, 32)
 ToggleAutoStealBtn.Font = Enum.Font.GothamBold
-ToggleAutoStealBtn.Text = "AUTO STEAL & RETURN: OFF"
+ToggleAutoStealBtn.Text = "AUTO STEAL: OFF"
 ToggleAutoStealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleAutoStealBtn.TextSize = 10
 
@@ -373,87 +361,68 @@ ToggleAutoStealBtn.MouseButton1Click:Connect(function()
             isAutoStealActive = false
             return
         end
-        ToggleAutoStealBtn.Text = "AUTO STEAL & RETURN: ON"
+        ToggleAutoStealBtn.Text = "AUTO STEAL: ON"
         ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
     else
-        ToggleAutoStealBtn.Text = "AUTO STEAL & RETURN: OFF"
+        ToggleAutoStealBtn.Text = "AUTO STEAL: OFF"
         ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         DisplayEggLabel.Text = "Status: Nonaktif"
     end
 end)
 
 -------------------------------------------------------------------
--- FLEXIBLE EGG DETECTOR (PILIH SEMUA SMARTPROMPT STEAL EGG)
+-- UNIVERSAL & SMART EGG FINDER (DETEKSI SEMUA PROMPT / NAMA)
 -------------------------------------------------------------------
-local function GetValidStealableEggs()
-    local validEggs = {}
+local function GetMatchingEggPrompt()
+    local bestPrompt = nil
 
     for _, prompt in pairs(Workspace:GetDescendants()) do
         if prompt:IsA("ProximityPrompt") and prompt.Enabled then
             local actionText = string.lower(prompt.ActionText or "")
             local objectText = string.lower(prompt.ObjectText or "")
             local parentName = string.lower(prompt.Parent.Name or "")
+            local fullString = actionText .. " " .. objectText .. " " .. parentName
 
-            -- Deteksi utama berdasarkan SmartPromptPart atau aksi Steal/Egg
-            local isSteal = string.find(actionText, "steal")
-            local isEggObj = string.find(objectText, "egg") or string.find(parentName, "smartpromptpart")
-
-            if isSteal and isEggObj then
-                -- Pastikan bukan milik pemain lain
+            -- Pastikan ini adalah prompt untuk mencuri (steal) telur (egg)
+            if (string.find(actionText, "steal") or string.find(fullString, "steal")) and (string.find(objectText, "egg") or string.find(fullString, "egg") or string.find(parentName, "egg")) then
+                
+                -- Cek apakah bukan milik player lain
                 local charAncestor = prompt:FindFirstAncestorOfClass("Model")
                 if not (charAncestor and Players:GetPlayerFromCharacter(charAncestor)) then
                     
-                    -- Jika menggunakan filter area (misal Area 1, Area 2, dll)
-                    local passArea = true
-                    if selectedTarget ~= "All" then
-                        local ancestorName = string.lower(prompt:GetFullName())
-                        local areaNum = string.match(selectedTarget, "%d+")
-                        if areaNum and not string.find(ancestorName, "area" .. areaNum) and not string.find(ancestorName, "zone" .. areaNum) then
-                            passArea = false
+                    -- Filter Rarity secara fleksibel (mencari kata rarity yang dipilih di seluruh teks/nama)
+                    if selectedRarity == "All" then
+                        bestPrompt = prompt
+                        break
+                    else
+                        if string.find(fullString, string.lower(selectedRarity)) then
+                            bestPrompt = prompt
+                            break
                         end
-                    end
-
-                    if passArea then
-                        table.insert(validEggs, prompt)
                     end
                 end
             end
         end
     end
 
-    return validEggs
+    return bestPrompt
 end
 
--- Tombol Manual Teleport Ke Egg
-TPEggPlaceBtn.MouseButton1Click:Connect(function()
-    local eggs = GetValidStealableEggs()
-    if #eggs > 0 then
-        local targetPrompt = eggs[1]
-        local targetPart = targetPrompt.Parent
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local targetCFrame = targetPart:IsA("BasePart") and targetPart.CFrame or (targetPart:IsA("Model") and targetPart:GetPivot() or LocalPlayer.Character.HumanoidRootPart.CFrame)
-            LocalPlayer.Character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-            DisplayEggLabel.Text = "Berhasil TP ke Egg!"
-        end
-    else
-        DisplayEggLabel.Text = "Telur tidak ditemukan di area ini!"
-    end
-end)
-
 -------------------------------------------------------------------
--- 100% GUARANTEED STEAL ENGINE (DENGAN KONFIRMASI)
+-- 100% GUARANTEED STEAL & AUTO RETURN ENGINE
 -------------------------------------------------------------------
-local function Execute100PercentSteal(prompt)
+local function SecureSteal(prompt)
     if not prompt or not prompt.Parent or not prompt.Enabled then return false end
     local char = LocalPlayer.Character
     if not char then return false end
 
-    DisplayEggLabel.Text = "Mencuri Telur... (Menunggu Masuk)"
+    DisplayEggLabel.Text = "Mengambil (" .. selectedRarity .. ")..."
+    
     local holdDuration = prompt.HoldDuration > 0 and prompt.HoldDuration or 0.2
     local startTime = tick()
-    local isSuccess = false
+    local success = false
 
-    while (tick() - startTime) < (holdDuration + 2.5) do
+    while (tick() - startTime) < (holdDuration + 2.0) do
         if not isAutoStealActive then break end
 
         if fireproximityprompt then
@@ -462,28 +431,27 @@ local function Execute100PercentSteal(prompt)
 
         if prompt.InputHoldBegin then
             prompt:InputHoldBegin()
-            task.wait(holdDuration + 0.1)
+            task.wait(holdDuration + 0.05)
             prompt:InputHoldEnd()
         else
             task.wait(0.1)
         end
 
-        -- Cek apakah telur sudah masuk inventory/dipegang atau prompt sudah nonaktif
-        local holdingTool = char:FindFirstChildOfClass("Tool")
-        if holdingTool or not prompt.Parent or not prompt.Enabled then
-            isSuccess = true
+        -- Begitu ada Tool di karakter ATAU prompt hilang/nonaktif, artinya sudah 100% sukses
+        if char:FindFirstChildOfClass("Tool") or not prompt.Parent or not prompt.Enabled then
+            success = true
             break
         end
 
-        task.wait(0.1)
+        task.wait(0.05)
     end
 
-    task.wait(0.2)
-    return isSuccess
+    task.wait(0.1)
+    return success
 end
 
 -------------------------------------------------------------------
--- MAIN LOOP (AUTO STEAL + RETURN TO BASE)
+-- MAIN LOOP (JALAN OTOMATIS SESUAI PILIHAN)
 -------------------------------------------------------------------
 task.spawn(function()
     while task.wait(0.2) do
@@ -494,29 +462,28 @@ task.spawn(function()
                 local hum = char.Humanoid
 
                 if hum.Health > 0 then
-                    local eggPrompts = GetValidStealableEggs()
+                    local targetPrompt = GetMatchingEggPrompt()
 
-                    if #eggPrompts > 0 then
-                        local selectedPrompt = eggPrompts[1]
-                        local targetPart = selectedPrompt.Parent
+                    if targetPrompt then
+                        local targetPart = targetPrompt.Parent
                         local targetCFrame = targetPart:IsA("BasePart") and targetPart.CFrame or (targetPart:IsA("Model") and targetPart:GetPivot() or hrp.CFrame)
 
-                        -- 1. Teleport ke Telur
+                        -- 1. Teleport ke Telur yang sesuai pilihan Rarity
                         hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
                         task.wait(0.15)
 
-                        -- 2. Steal 100% Pasti Masuk
-                        local stoleSuccessfully = Execute100PercentSteal(selectedPrompt)
+                        -- 2. Ambil sampai 100% masuk inventory/tangan
+                        local isGotIt = SecureSteal(targetPrompt)
 
-                        -- 3. Teleport Balik Ke Base Begitu Sukses
-                        if stoleSuccessfully then
-                            DisplayEggLabel.Text = "Telur Aman! Pulang ke Base..."
+                        -- 3. Teleport Balik ke Base Hanya Setelah Sukses
+                        if isGotIt then
+                            DisplayEggLabel.Text = "Telur Didapat! Pulang ke Base..."
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
-                            task.wait(0.8)
-                            DisplayEggLabel.Text = "Sukses Menyimpan Telur!"
+                            task.wait(0.85)
+                            DisplayEggLabel.Text = "Siap Mencari Lagi..."
                         end
                     else
-                        DisplayEggLabel.Text = "Mencari Telur (" .. selectedTarget .. ")..."
+                        DisplayEggLabel.Text = "Mencari Rarity [" .. selectedRarity .. "]..."
                     end
                 end
             end
@@ -549,7 +516,7 @@ InfoTabBtn.MouseButton1Click:Connect(function()
     MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 end)
 
-MainTabBtn.MouseButton1Click:Connect(function()
+MainTabBtn.MouseButton1Click:Connect(function5
     InfoPage.Visible = false; MainPage.Visible = true
     MainTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
     InfoTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
