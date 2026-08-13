@@ -1,4 +1,4 @@
--- [[ EXZET HUB V7 - SMART PLACE FILTER + PROXIMITY HOLD FIX ]] --
+-- [[ EXZET HUB V8 - WISHHUB AUTO STEAL REPLICA + RARITY FILTER ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -11,10 +11,12 @@ local customSpeed = 16
 local defaultSpeed = 16
 local isSpeedActive = false
 
-local isAutoCollectActive = false
+local isAutoStealActive = false
 local myBasePosition = nil
-local dynamicZonesList = {"[ SEMUA TELUR IN-GAME ]"}
-local selectedZoneIndex = 1
+
+-- Rarities Settings
+local raritiesList = {"ALL RARITIES", "Secret", "Mythic", "Legendary", "Rare", "Uncommon", "Common"}
+local selectedRarityIndex = 1
 
 -- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -53,15 +55,14 @@ IconStroke.Color = Color3.fromRGB(255, 255, 255)
 IconStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- 2. MAIN HUB FRAME
+-- 2. MAIN HUB FRAME (WISHHUB STYLE UI)
 -------------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -165)
-MainFrame.Size = UDim2.new(0, 450, 0, 330)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 22)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -170)
+MainFrame.Size = UDim2.new(0, 450, 0, 340)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -69,25 +70,16 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
-local MainGradient = Instance.new("UIGradient")
-MainGradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
-}
-MainGradient.Rotation = 45
-MainGradient.Parent = MainFrame
-
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Parent = MainFrame
-MainStroke.Color = Color3.fromRGB(255, 40, 40)
+MainStroke.Color = Color3.fromRGB(140, 60, 220)
 MainStroke.Thickness = 1.5
 
 -- TOPBAR
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
-Topbar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-Topbar.BackgroundTransparency = 0.4
+Topbar.BackgroundColor3 = Color3.fromRGB(10, 8, 14)
 Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 38)
 
@@ -99,17 +91,17 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 220, 1, 0)
+Title.Size = UDim2.new(0, 240, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Auto Stealer V7"
+Title.Text = "Exzet Hub - Auto Stealer (WishHub V8)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
+Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MINIMIZE & CLOSE BUTTONS
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = Topbar
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 MinimizeBtn.Position = UDim2.new(1, -70, 0, 6)
 MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
 MinimizeBtn.Font = Enum.Font.GothamBold
@@ -158,44 +150,50 @@ TabBar.BackgroundTransparency = 1
 TabBar.Position = UDim2.new(0, 8, 0, 45)
 TabBar.Size = UDim2.new(0, 100, 1, -50)
 
-local InfoTabBtn = Instance.new("TextButton")
-InfoTabBtn.Parent = TabBar
-InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-InfoTabBtn.Size = UDim2.new(1, 0, 0, 32)
-InfoTabBtn.Font = Enum.Font.GothamBold
-InfoTabBtn.Text = "Info"
-InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfoTabBtn.TextSize = 13
-
-local InfoCorner = Instance.new("UICorner")
-InfoCorner.CornerRadius = UDim.new(0, 6)
-InfoCorner.Parent = InfoTabBtn
-
 local MainTabBtn = Instance.new("TextButton")
 MainTabBtn.Parent = TabBar
-MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainTabBtn.Position = UDim2.new(0, 0, 0, 40)
+MainTabBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 200)
 MainTabBtn.Size = UDim2.new(1, 0, 0, 32)
 MainTabBtn.Font = Enum.Font.GothamBold
-MainTabBtn.Text = "Main"
-MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+MainTabBtn.Text = "Eggs"
+MainTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MainTabBtn.TextSize = 13
 
 local MainTabCorner = Instance.new("UICorner")
 MainTabCorner.CornerRadius = UDim.new(0, 6)
 MainTabCorner.Parent = MainTabBtn
 
--- PAGES
+local InfoTabBtn = Instance.new("TextButton")
+InfoTabBtn.Parent = TabBar
+InfoTabBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 35)
+InfoTabBtn.Position = UDim2.new(0, 0, 0, 40)
+InfoTabBtn.Size = UDim2.new(1, 0, 0, 32)
+InfoTabBtn.Font = Enum.Font.GothamBold
+InfoTabBtn.Text = "Info"
+InfoTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+InfoTabBtn.TextSize = 13
+
+local InfoCorner = Instance.new("UICorner")
+InfoCorner.CornerRadius = UDim.new(0, 6)
+InfoCorner.Parent = InfoTabBtn
+
+-- PAGES CONTAINER
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 115, 0, 45)
 ContentContainer.Size = UDim2.new(1, -125, 1, -50)
 
+local MainPage = Instance.new("Frame")
+MainPage.Parent = ContentContainer
+MainPage.BackgroundTransparency = 1
+MainPage.Size = UDim2.new(1, 0, 1, 0)
+
 local InfoPage = Instance.new("Frame")
 InfoPage.Parent = ContentContainer
 InfoPage.BackgroundTransparency = 1
 InfoPage.Size = UDim2.new(1, 0, 1, 0)
+InfoPage.Visible = false
 
 local CreatorLabel = Instance.new("TextLabel")
 CreatorLabel.Parent = InfoPage
@@ -203,19 +201,13 @@ CreatorLabel.BackgroundTransparency = 1
 CreatorLabel.Position = UDim2.new(0, 0, 0, 5)
 CreatorLabel.Size = UDim2.new(1, 0, 0, 20)
 CreatorLabel.Font = Enum.Font.GothamBold
-CreatorLabel.Text = "Pembuat: exzet"
+CreatorLabel.Text = "Pembuat: exzet (Replica WishHub)"
 CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-CreatorLabel.TextSize = 14
+CreatorLabel.TextSize = 13
 CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local MainPage = Instance.new("Frame")
-MainPage.Parent = ContentContainer
-MainPage.BackgroundTransparency = 1
-MainPage.Size = UDim2.new(1, 0, 1, 0)
-MainPage.Visible = false
-
 -------------------------------------------------------------------
--- SPEED CONTROL
+-- SPEED CONTROLS
 -------------------------------------------------------------------
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
@@ -223,14 +215,14 @@ SpeedLabel.BackgroundTransparency = 1
 SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
 SpeedLabel.Size = UDim2.new(1, 0, 0, 15)
 SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.Text = "Kecepatan Jalan (Permanent No-Reset):"
+SpeedLabel.Text = "Speed Engine (Permanent):"
 SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedLabel.TextSize = 11
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local SpeedInput = Instance.new("TextBox")
 SpeedInput.Parent = MainPage
-SpeedInput.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SpeedInput.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 SpeedInput.Position = UDim2.new(0, 0, 0, 16)
 SpeedInput.Size = UDim2.new(0, 90, 0, 22)
 SpeedInput.Font = Enum.Font.Gotham
@@ -240,7 +232,7 @@ SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 local SpeedApplyBtn = Instance.new("TextButton")
 SpeedApplyBtn.Parent = MainPage
-SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 200)
 SpeedApplyBtn.Position = UDim2.new(0, 95, 0, 16)
 SpeedApplyBtn.Size = UDim2.new(0, 75, 0, 22)
 SpeedApplyBtn.Font = Enum.Font.GothamBold
@@ -250,7 +242,7 @@ SpeedApplyBtn.TextSize = 10
 
 local SpeedResetBtn = Instance.new("TextButton")
 SpeedResetBtn.Parent = MainPage
-SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 SpeedResetBtn.Position = UDim2.new(0, 174, 0, 16)
 SpeedResetBtn.Size = UDim2.new(0, 102, 0, 22)
 SpeedResetBtn.Font = Enum.Font.GothamBold
@@ -273,52 +265,42 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STEAL EGG CONTROLS
+-- WISHHUB STEAL EGG CONTROLS
 -------------------------------------------------------------------
-local ScanMapZonesBtn = Instance.new("TextButton")
-ScanMapZonesBtn.Parent = MainPage
-ScanMapZonesBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 180)
-ScanMapZonesBtn.Position = UDim2.new(0, 0, 0, 45)
-ScanMapZonesBtn.Size = UDim2.new(0, 276, 0, 24)
-ScanMapZonesBtn.Font = Enum.Font.GothamBold
-ScanMapZonesBtn.Text = "🔍 Filter & Impor Zone Egg"
-ScanMapZonesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ScanMapZonesBtn.TextSize = 11
-
-local ZoneSelectBtn = Instance.new("TextButton")
-ZoneSelectBtn.Parent = MainPage
-ZoneSelectBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
-ZoneSelectBtn.Position = UDim2.new(0, 0, 0, 72)
-ZoneSelectBtn.Size = UDim2.new(0, 276, 0, 24)
-ZoneSelectBtn.Font = Enum.Font.GothamBold
-ZoneSelectBtn.Text = "Pilih Zone: [ SEMUA TELUR IN-GAME ]"
-ZoneSelectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ZoneSelectBtn.TextSize = 11
+local RaritySelectBtn = Instance.new("TextButton")
+RaritySelectBtn.Parent = MainPage
+RaritySelectBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
+RaritySelectBtn.Position = UDim2.new(0, 0, 0, 48)
+RaritySelectBtn.Size = UDim2.new(0, 276, 0, 26)
+RaritySelectBtn.Font = Enum.Font.GothamBold
+RaritySelectBtn.Text = "Rarities: [ ALL RARITIES ]"
+RaritySelectBtn.TextColor3 = Color3.fromRGB(200, 160, 255)
+RaritySelectBtn.TextSize = 11
 
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
-SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 0, 0, 100)
-SetBaseBtn.Size = UDim2.new(0, 133, 0, 24)
+SetBaseBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 200)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 80)
+SetBaseBtn.Size = UDim2.new(0, 133, 0, 26)
 SetBaseBtn.Font = Enum.Font.GothamBold
-SetBaseBtn.Text = "1. Set Posisi Base"
+SetBaseBtn.Text = "1. Set Pen / Base"
 SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SetBaseBtn.TextSize = 10
 
 local TPBaseDirectBtn = Instance.new("TextButton")
 TPBaseDirectBtn.Parent = MainPage
-TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 100)
-TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 24)
+TPBaseDirectBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 90)
+TPBaseDirectBtn.Position = UDim2.new(0, 138, 0, 80)
+TPBaseDirectBtn.Size = UDim2.new(0, 138, 0, 26)
 TPBaseDirectBtn.Font = Enum.Font.GothamBold
-TPBaseDirectBtn.Text = "TP Ke Base"
+TPBaseDirectBtn.Text = "TP Ke Pen/Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TPBaseDirectBtn.TextSize = 10
 
 local DisplayEggLabel = Instance.new("TextLabel")
 DisplayEggLabel.Parent = MainPage
 DisplayEggLabel.BackgroundTransparency = 1
-DisplayEggLabel.Position = UDim2.new(0, 0, 0, 128)
+DisplayEggLabel.Position = UDim2.new(0, 0, 0, 112)
 DisplayEggLabel.Size = UDim2.new(1, 0, 0, 16)
 DisplayEggLabel.Font = Enum.Font.Gotham
 DisplayEggLabel.Text = "Status: Nonaktif"
@@ -326,111 +308,28 @@ DisplayEggLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
 DisplayEggLabel.TextSize = 10
 DisplayEggLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local ToggleAutoCollectBtn = Instance.new("TextButton")
-ToggleAutoCollectBtn.Parent = MainPage
-ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleAutoCollectBtn.Position = UDim2.new(0, 0, 0, 148)
-ToggleAutoCollectBtn.Size = UDim2.new(0, 276, 0, 30)
-ToggleAutoCollectBtn.Font = Enum.Font.GothamBold
-ToggleAutoCollectBtn.Text = "AUTO STEAL EGG: OFF"
-ToggleAutoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleAutoCollectBtn.TextSize = 11
+local ToggleAutoStealBtn = Instance.new("TextButton")
+ToggleAutoStealBtn.Parent = MainPage
+ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+ToggleAutoStealBtn.Position = UDim2.new(0, 0, 0, 135)
+ToggleAutoStealBtn.Size = UDim2.new(0, 276, 0, 32)
+ToggleAutoStealBtn.Font = Enum.Font.GothamBold
+ToggleAutoStealBtn.Text = "Auto Steal: OFF"
+ToggleAutoStealBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleAutoStealBtn.TextSize = 12
 
--------------------------------------------------------------------
--- CLEAN MAP SCANNER (FILTER HANYA ARENA)
--------------------------------------------------------------------
-local function AutoDetectMapZones()
-    dynamicZonesList = {"[ SEMUA TELUR IN-GAME ]"}
-    local addedZones = {}
-
-    for _, prompt in pairs(Workspace:GetDescendants()) do
-        if prompt:IsA("ProximityPrompt") then
-            -- Cek kalau prompt bukan milik player
-            local isPlayerModel = prompt:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(prompt:FindFirstAncestorOfClass("Model"))
-            if not isPlayerModel then
-                -- Cari nama folder utama di Workspace tempat telur itu berada
-                local ancestor = prompt.Parent
-                while ancestor and ancestor.Parent ~= Workspace do
-                    ancestor = ancestor.Parent
-                end
-                
-                if ancestor and ancestor ~= Workspace then
-                    local zoneName = ancestor.Name
-                    -- Menghindari folder sistem/peta umum
-                    if not addedZones[zoneName] and not string.find(string.lower(zoneName), "camera") and not string.find(string.lower(zoneName), "terrain") then
-                        addedZones[zoneName] = true
-                        table.insert(dynamicZonesList, zoneName)
-                    end
-                end
-            end
-        end
-    end
-    
-    ScanMapZonesBtn.Text = "✅ Berhasil Ditemukan " .. (#dynamicZonesList - 1) .. " Zone Valid!"
-    task.wait(1.5)
-    ScanMapZonesBtn.Text = "🔍 Filter & Impor Zone Egg"
-end
-
--------------------------------------------------------------------
--- REAL PROXIMITY PROMPT HOLD TRIGGER
--------------------------------------------------------------------
-local function TriggerPromptHold(prompt)
-    if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Enabled then return end
-    
-    -- Memicu simulasi tahan tombol E sesuai durasi prompt game
-    if fireproximityprompt then
-        fireproximityprompt(prompt)
-    end
-    
-    -- Backup method jika game butuh Hold Duration
-    if prompt.HoldDuration > 0 then
-        if prompt.InputHoldBegin then prompt:InputHoldBegin() end
-        task.wait(prompt.HoldDuration + 0.1)
-        if prompt.InputHoldEnd then prompt:InputHoldEnd() end
-    end
-end
-
--------------------------------------------------------------------
--- COLLECTOR ENGINE (GET EGGS)
--------------------------------------------------------------------
-local function FetchTargetEggPrompts()
-    local resultPrompts = {}
-    local currentZone = dynamicZonesList[selectedZoneIndex]
-
-    for _, prompt in pairs(Workspace:GetDescendants()) do
-        if prompt:IsA("ProximityPrompt") and prompt.Enabled then
-            -- Pastikan bukan milik player lain
-            local ownerChar = prompt:FindFirstAncestorOfClass("Model")
-            if not (ownerChar and Players:GetPlayerFromCharacter(ownerChar)) then
-                if currentZone == "[ SEMUA TELUR IN-GAME ]" then
-                    table.insert(resultPrompts, prompt)
-                else
-                    if prompt:IsDescendantOf(Workspace:FindFirstChild(currentZone)) or string.find(string.lower(prompt.Parent.Name), string.lower(currentZone)) then
-                        table.insert(resultPrompts, prompt)
-                    end
-                end
-            end
-        end
-    end
-    return resultPrompts
-end
-
-ScanMapZonesBtn.MouseButton1Click:Connect(function()
-    AutoDetectMapZones()
-end)
-
-ZoneSelectBtn.MouseButton1Click:Connect(function()
-    selectedZoneIndex = selectedZoneIndex + 1
-    if selectedZoneIndex > #dynamicZonesList then selectedZoneIndex = 1 end
-    ZoneSelectBtn.Text = "Pilih Zone: [ " .. dynamicZonesList[selectedZoneIndex] .. " ]"
+RaritySelectBtn.MouseButton1Click:Connect(function()
+    selectedRarityIndex = selectedRarityIndex + 1
+    if selectedRarityIndex > #raritiesList then selectedRarityIndex = 1 end
+    RaritySelectBtn.Text = "Rarities: [ " .. raritiesList[selectedRarityIndex] .. " ]"
 end)
 
 SetBaseBtn.MouseButton1Click:Connect(function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
-        SetBaseBtn.Text = "Base Tersimpan!"
+        SetBaseBtn.Text = "Pen/Base Tersimpan!"
         task.wait(1)
-        SetBaseBtn.Text = "1. Set Posisi Base"
+        SetBaseBtn.Text = "1. Set Pen / Base"
     end
 end)
 
@@ -440,59 +339,131 @@ TPBaseDirectBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-ToggleAutoCollectBtn.MouseButton1Click:Connect(function()
-    isAutoCollectActive = not isAutoCollectActive
-    if isAutoCollectActive then
+ToggleAutoStealBtn.MouseButton1Click:Connect(function()
+    isAutoStealActive = not isAutoStealActive
+    if isAutoStealActive then
         if not myBasePosition then
-            DisplayEggLabel.Text = "❌ Set Posisi Base Dulu!"
-            isAutoCollectActive = false
+            DisplayEggLabel.Text = "❌ Harap Set Pen / Base Dulu!"
+            isAutoStealActive = false
             return
         end
-        ToggleAutoCollectBtn.Text = "AUTO STEAL EGG: ON"
-        ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        ToggleAutoStealBtn.Text = "Auto Steal: ON"
+        ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 80)
     else
-        ToggleAutoCollectBtn.Text = "AUTO STEAL EGG: OFF"
-        ToggleAutoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        ToggleAutoStealBtn.Text = "Auto Steal: OFF"
+        ToggleAutoStealBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         DisplayEggLabel.Text = "Status: Nonaktif"
     end
 end)
 
--- MAIN AUTO STEAL LOOP
+-------------------------------------------------------------------
+-- WISHHUB ENGINE (SMALL HOPS TELEPORT RETURN & RARITY SCANNER)
+-------------------------------------------------------------------
+
+-- Function 1: Check Rarity Match
+local function MatchesSelectedRarity(obj)
+    local targetRarity = raritiesList[selectedRarityIndex]
+    if targetRarity == "ALL RARITIES" then return true end
+
+    local fullStr = string.lower(obj.Name)
+    
+    -- Cek jika ada Attributes / Child Rarity
+    for _, child in pairs(obj:GetChildren()) do
+        fullStr = fullStr .. " " .. string.lower(child.Name)
+        if child:IsA("StringValue") then fullStr = fullStr .. " " .. string.lower(child.Value) end
+    end
+    
+    if obj:GetAttributes() then
+        for k, v in pairs(obj:GetAttributes()) do
+            fullStr = fullStr .. " " .. string.lower(tostring(k)) .. " " .. string.lower(tostring(v))
+        end
+    end
+
+    return string.find(fullStr, string.lower(targetRarity)) ~= nil
+end
+
+-- Function 2: Scan Real Target Eggs & Prompts
+local function GetTargetEggs()
+    local resultList = {}
+
+    for _, prompt in pairs(Workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") and prompt.Enabled then
+            local eggContainer = prompt.Parent
+            
+            -- Pastikan bukan milik player lain
+            local isPlayer = eggContainer:FindFirstAncestorOfClass("Model") and Players:GetPlayerFromCharacter(eggContainer:FindFirstAncestorOfClass("Model"))
+            if not isPlayer then
+                if MatchesSelectedRarity(eggContainer) or MatchesSelectedRarity(prompt) then
+                    table.insert(resultList, {prompt = prompt, egg = eggContainer})
+                end
+            end
+        end
+    end
+
+    return resultList
+end
+
+-- Function 3: WishHub Small Hops / Blink Back Return (Prevent Drop Egg)
+local function BlinkReturnToBase(hrp, startPos, targetPos)
+    local distance = (targetPos - startPos).Magnitude
+    local steps = math.clamp(math.floor(distance / 25), 3, 12) -- Membagi jarak menjadi lompatan kecil cepat
+    
+    for i = 1, steps do
+        if not isAutoStealActive then break end
+        local lerpPos = startPos:Lerp(targetPos, i / steps)
+        hrp.CFrame = CFrame.new(lerpPos + Vector3.new(0, 2.5, 0))
+        task.wait(0.04) -- Blink cepat agar tidak kedeteksi drop egg oleh server
+    end
+    
+    hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+end
+
+-- MAIN STEAL LOOP ENGINE
 task.spawn(function()
-    while task.wait(0.3) do
-        if isAutoCollectActive and myBasePosition then
+    while task.wait(0.25) do
+        if isAutoStealActive and myBasePosition then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
                 local hrp = char.HumanoidRootPart
                 local hum = char.Humanoid
 
                 if hum.Health > 0 then
-                    local targetPrompts = FetchTargetEggPrompts()
+                    local eggTargets = GetTargetEggs()
 
-                    if #targetPrompts > 0 then
-                        local selectedPrompt = targetPrompts[1]
-                        local eggPart = selectedPrompt.Parent
+                    if #eggTargets > 0 then
+                        local targetData = eggTargets[1]
+                        local prompt = targetData.prompt
+                        local eggObj = targetData.egg
                         
-                        if eggPart and (eggPart:IsA("BasePart") or eggPart:IsA("Model")) then
-                            local targetCFrame = eggPart:IsA("BasePart") and eggPart.CFrame or eggPart:GetPivot()
-                            DisplayEggLabel.Text = "Mengambil: " .. eggPart.Name
+                        local targetCFrame = eggObj:IsA("BasePart") and eggObj.CFrame or (eggObj:IsA("Model") and eggObj:GetPivot() or hrp.CFrame)
 
-                            -- 1. TP Teleport Safe (+3.5 stud diatas egg)
-                            hrp.CFrame = targetCFrame + Vector3.new(0, 3.5, 0)
-                            task.wait(0.2)
+                        DisplayEggLabel.Text = "Teleporting: " .. eggObj.Name
+                        
+                        -- 1. Teleport ke Egg
+                        hrp.CFrame = targetCFrame + Vector3.new(0, 3.2, 0)
+                        task.wait(0.15)
 
-                            -- 2. Menahan/Mencuri Prompt Steal
-                            TriggerPromptHold(selectedPrompt)
-                            task.wait(0.3)
-
-                            -- 3. Teleport Kembali ke Base Membawa Telur
-                            if isAutoCollectActive and hum.Health > 0 then
-                                hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3.5, 0))
-                                task.wait(0.8) -- Jeda aman agar server mencatat telur ter-deposit di base
-                            end
+                        -- 2. Steal Egg (Fire Prompt)
+                        DisplayEggLabel.Text = "Grabbing Egg..."
+                        if fireproximityprompt then
+                            fireproximityprompt(prompt)
                         end
+                        
+                        if prompt.HoldDuration > 0 then
+                            if prompt.InputHoldBegin then prompt:InputHoldBegin() end
+                            task.wait(prompt.HoldDuration)
+                            if prompt.InputHoldEnd then prompt:InputHoldEnd() end
+                        end
+
+                        task.wait(0.2)
+
+                        -- 3. Blink Return Back to Pen/Base (WishHub Style - Anti Egg Drop)
+                        DisplayEggLabel.Text = "Returning to Pen..."
+                        BlinkReturnToBase(hrp, hrp.Position, myBasePosition)
+                        
+                        task.wait(0.5) -- Deposit Time
                     else
-                        DisplayEggLabel.Text = "Mencari Egg di Zone Ini..."
+                        DisplayEggLabel.Text = "Mencari Egg [" .. raritiesList[selectedRarityIndex] .. "]..."
                     end
                 end
             end
@@ -501,7 +472,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------------------------
--- PERMANENT SPEED ENGINE (PERSISTENT AFTER DEATH)
+-- PERMANENT SPEED ENGINE
 -------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
@@ -518,15 +489,15 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- TAB NAVIGATION SWITCH
-InfoTabBtn.MouseButton1Click:Connect(function()
-    InfoPage.Visible = true; MainPage.Visible = false
-    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+-- TAB SWITCH
+MainTabBtn.MouseButton1Click:Connect(function()
+    MainPage.Visible = true; InfoPage.Visible = false
+    MainTabBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 200)
+    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 35)
 end)
 
-MainTabBtn.MouseButton1Click:Connect(function()
-    InfoPage.Visible = false; MainPage.Visible = true
-    MainTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+InfoTabBtn.MouseButton1Click:Connect(function()
+    MainPage.Visible = false; InfoPage.Visible = true
+    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 200)
+    MainTabBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 35)
 end)
