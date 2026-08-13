@@ -346,20 +346,25 @@ JumpResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- ENGINE BYPASS (REALTIME LOOP)
+-- ENGINE BYPASS (VELOCITY METHOD - ANTI RUBBERBAND)
 -------------------------------------------------------------------
-RunService.Heartbeat:Connect(function(delta)
+RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
         local hrp = char.HumanoidRootPart
         local hum = char.Humanoid
 
-        -- BYPASS WALKSPEED MENGGUNAKAN CFRAME
+        -- BYPASS WALKSPEED MENGGUNAKAN ASSEMBLY LINEAR VELOCITY
         if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
-            local speedMultiplier = (customSpeed / 16) - 1
-            if speedMultiplier > 0 then
-                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (speedMultiplier * 16 * delta))
-            end
+            -- Mendorong kecepatan fisika karakter secara mulus
+            local currentY = hrp.AssemblyLinearVelocity.Y -- Menjaga gravitasi/lompatan tetap normal
+            local moveDir = hum.MoveDirection
+            
+            hrp.AssemblyLinearVelocity = Vector3.new(
+                moveDir.X * customSpeed,
+                currentY,
+                moveDir.Z * customSpeed
+            )
         end
 
         -- BYPASS JUMP
@@ -370,7 +375,6 @@ RunService.Heartbeat:Connect(function(delta)
         end
     end
 end)
-
 -------------------------------------------------------------------
 -- TAB SWITCHING LOGIC
 -------------------------------------------------------------------
