@@ -4,7 +4,16 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
+
+-- Status State untuk Fitur
+local customSpeed = 16
+local isSpeedActive = false
+local customJump = 50
+local isJumpActive = false
+local isAutoEggActive = false
+local myBasePosition = nil -- Menyimpan titik koordinat rumah/garden kamu
 
 -- Matikan Topbar/Header Bawaan Roblox Agar Bar Hitam Tidak Muncul
 pcall(function()
@@ -188,19 +197,16 @@ DiscordBtn.MouseButton1Click:Connect(function()
     DiscordBtn.Text = "Salin Link Discord"
 end)
 
--- PAGE 2: MAIN (WALKSPEED & JUMPHEIGHT)
+-- PAGE 2: MAIN (WALKSPEED, JUMP, & STEAL AN EGG)
 local MainPage = Instance.new("Frame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
 
-local customSpeed = 16
-local isSpeedActive = false
-local customJump = 50
-local isJumpActive = false
-
+-------------------------------------------------------------------
 -- FITUR WALKSPEED
+-------------------------------------------------------------------
 local SpeedLabel = Instance.new("TextLabel")
 SpeedLabel.Parent = MainPage
 SpeedLabel.BackgroundTransparency = 1
@@ -215,13 +221,13 @@ SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 local SpeedInput = Instance.new("TextBox")
 SpeedInput.Parent = MainPage
 SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SpeedInput.Position = UDim2.new(0, 0, 0, 30)
-SpeedInput.Size = UDim2.new(0, 120, 0, 30)
+SpeedInput.Position = UDim2.new(0, 0, 0, 28)
+SpeedInput.Size = UDim2.new(0, 120, 0, 28)
 SpeedInput.Font = Enum.Font.Gotham
 SpeedInput.PlaceholderText = "Misal: 30 / 50"
 SpeedInput.Text = ""
 SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedInput.TextSize = 13
+SpeedInput.TextSize = 12
 
 local SpeedInputCorner = Instance.new("UICorner")
 SpeedInputCorner.CornerRadius = UDim.new(0, 6)
@@ -230,8 +236,8 @@ SpeedInputCorner.Parent = SpeedInput
 local SpeedApplyBtn = Instance.new("TextButton")
 SpeedApplyBtn.Parent = MainPage
 SpeedApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SpeedApplyBtn.Position = UDim2.new(0, 130, 0, 30)
-SpeedApplyBtn.Size = UDim2.new(0, 80, 0, 30)
+SpeedApplyBtn.Position = UDim2.new(0, 130, 0, 28)
+SpeedApplyBtn.Size = UDim2.new(0, 80, 0, 28)
 SpeedApplyBtn.Font = Enum.Font.GothamBold
 SpeedApplyBtn.Text = "Set Speed"
 SpeedApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -244,8 +250,8 @@ SpeedApplyCorner.Parent = SpeedApplyBtn
 local SpeedResetBtn = Instance.new("TextButton")
 SpeedResetBtn.Parent = MainPage
 SpeedResetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-SpeedResetBtn.Position = UDim2.new(0, 220, 0, 30)
-SpeedResetBtn.Size = UDim2.new(0, 70, 0, 30)
+SpeedResetBtn.Position = UDim2.new(0, 218, 0, 28)
+SpeedResetBtn.Size = UDim2.new(0, 70, 0, 28)
 SpeedResetBtn.Font = Enum.Font.GothamBold
 SpeedResetBtn.Text = "Reset"
 SpeedResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -271,11 +277,13 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-------------------------------------------------------------------
 -- FITUR JUMPHEIGHT
+-------------------------------------------------------------------
 local JumpLabel = Instance.new("TextLabel")
 JumpLabel.Parent = MainPage
 JumpLabel.BackgroundTransparency = 1
-JumpLabel.Position = UDim2.new(0, 0, 0, 75)
+JumpLabel.Position = UDim2.new(0, 0, 0, 65)
 JumpLabel.Size = UDim2.new(1, 0, 0, 20)
 JumpLabel.Font = Enum.Font.GothamBold
 JumpLabel.Text = "Tinggi Lompatan (JumpHeight):"
@@ -286,13 +294,13 @@ JumpLabel.TextXAlignment = Enum.TextXAlignment.Left
 local JumpInput = Instance.new("TextBox")
 JumpInput.Parent = MainPage
 JumpInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-JumpInput.Position = UDim2.new(0, 0, 0, 100)
-JumpInput.Size = UDim2.new(0, 120, 0, 30)
+JumpInput.Position = UDim2.new(0, 0, 0, 88)
+JumpInput.Size = UDim2.new(0, 120, 0, 28)
 JumpInput.Font = Enum.Font.Gotham
 JumpInput.PlaceholderText = "Default: 50"
 JumpInput.Text = ""
 JumpInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpInput.TextSize = 13
+JumpInput.TextSize = 12
 
 local JumpInputCorner = Instance.new("UICorner")
 JumpInputCorner.CornerRadius = UDim.new(0, 6)
@@ -301,8 +309,8 @@ JumpInputCorner.Parent = JumpInput
 local JumpApplyBtn = Instance.new("TextButton")
 JumpApplyBtn.Parent = MainPage
 JumpApplyBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-JumpApplyBtn.Position = UDim2.new(0, 130, 0, 100)
-JumpApplyBtn.Size = UDim2.new(0, 80, 0, 30)
+JumpApplyBtn.Position = UDim2.new(0, 130, 0, 88)
+JumpApplyBtn.Size = UDim2.new(0, 80, 0, 28)
 JumpApplyBtn.Font = Enum.Font.GothamBold
 JumpApplyBtn.Text = "Set Jump"
 JumpApplyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -315,8 +323,8 @@ JumpApplyCorner.Parent = JumpApplyBtn
 local JumpResetBtn = Instance.new("TextButton")
 JumpResetBtn.Parent = MainPage
 JumpResetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-JumpResetBtn.Position = UDim2.new(0, 220, 0, 100)
-JumpResetBtn.Size = UDim2.new(0, 70, 0, 30)
+JumpResetBtn.Position = UDim2.new(0, 218, 0, 88)
+JumpResetBtn.Size = UDim2.new(0, 70, 0, 28)
 JumpResetBtn.Font = Enum.Font.GothamBold
 JumpResetBtn.Text = "Reset"
 JumpResetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -346,6 +354,71 @@ JumpResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
+-- FITUR STEAL AN EGG (UI BUTTONS)
+-------------------------------------------------------------------
+local EggLabel = Instance.new("TextLabel")
+EggLabel.Parent = MainPage
+EggLabel.BackgroundTransparency = 1
+EggLabel.Position = UDim2.new(0, 0, 0, 125)
+EggLabel.Size = UDim2.new(1, 0, 0, 20)
+EggLabel.Font = Enum.Font.GothamBold
+EggLabel.Text = "Fitur Steal an Egg:"
+EggLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+EggLabel.TextSize = 13
+EggLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Tombol Simpan Base
+local SetBaseBtn = Instance.new("TextButton")
+SetBaseBtn.Parent = MainPage
+SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+SetBaseBtn.Position = UDim2.new(0, 0, 0, 148)
+SetBaseBtn.Size = UDim2.new(0, 130, 0, 32)
+SetBaseBtn.Font = Enum.Font.GothamBold
+SetBaseBtn.Text = "Simpan Posisi Base"
+SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SetBaseBtn.TextSize = 11
+
+local SetBaseCorner = Instance.new("UICorner")
+SetBaseCorner.CornerRadius = UDim.new(0, 6)
+SetBaseCorner.Parent = SetBaseBtn
+
+-- Tombol Toggle Auto Egg
+local ToggleEggBtn = Instance.new("TextButton")
+ToggleEggBtn.Parent = MainPage
+ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleEggBtn.Position = UDim2.new(0, 138, 0, 148)
+ToggleEggBtn.Size = UDim2.new(0, 150, 0, 32)
+ToggleEggBtn.Font = Enum.Font.GothamBold
+ToggleEggBtn.Text = "Auto Egg: OFF"
+ToggleEggBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleEggBtn.TextSize = 11
+
+local ToggleEggCorner = Instance.new("UICorner")
+ToggleEggCorner.CornerRadius = UDim.new(0, 6)
+ToggleEggCorner.Parent = ToggleEggBtn
+
+-- Event Listener Tombol Base & Auto Egg
+SetBaseBtn.MouseButton1Click:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
+        SetBaseBtn.Text = "Base Tersimpan!"
+        task.wait(1.5)
+        SetBaseBtn.Text = "Simpan Posisi Base"
+    end
+end)
+
+ToggleEggBtn.MouseButton1Click:Connect(function()
+    isAutoEggActive = not isAutoEggActive
+    if isAutoEggActive then
+        ToggleEggBtn.Text = "Auto Egg: ON"
+        ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    else
+        ToggleEggBtn.Text = "Auto Egg: OFF"
+        ToggleEggBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    end
+end)
+
+-------------------------------------------------------------------
 -- ENGINE BYPASS (VELOCITY METHOD - ANTI RUBBERBAND)
 -------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
@@ -356,8 +429,7 @@ RunService.Heartbeat:Connect(function()
 
         -- BYPASS WALKSPEED MENGGUNAKAN ASSEMBLY LINEAR VELOCITY
         if isSpeedActive and hum.MoveDirection.Magnitude > 0 then
-            -- Mendorong kecepatan fisika karakter secara mulus
-            local currentY = hrp.AssemblyLinearVelocity.Y -- Menjaga gravitasi/lompatan tetap normal
+            local currentY = hrp.AssemblyLinearVelocity.Y
             local moveDir = hum.MoveDirection
             
             hrp.AssemblyLinearVelocity = Vector3.new(
@@ -379,30 +451,11 @@ end)
 -------------------------------------------------------------------
 -- STEAL AN EGG - SAFE EGG COLLECTOR ENGINE
 -------------------------------------------------------------------
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-local isAutoEggActive = false
-local myBasePosition = nil -- Menyimpan titik koordinat rumah/garden kamu
-
--- 1. FUNGSI SAVE BASE / GARDEN
-local function SetBasePos()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
-        print("Posisi Base/Garden tersimpan!")
-    end
-end
-
--- 2. FUNGSI UNTUK MENCARI EGG DI WORKSPACE
 local function FindSpawnedEggs()
     local detectedEggs = {}
     
-    -- Biasanya egg di game "Steal an Egg" tersimpan di folder Workspace
-    -- Script ini bakal otomatis memindai objek bernama 'Egg' / 'Eggs'
     for _, obj in pairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            -- Deteksi nama objek yang mengandung kata "Egg"
             if string.find(string.lower(obj.Name), "egg") and not string.find(string.lower(obj.Parent.Name), "ui") then
                 table.insert(detectedEggs, obj)
             end
@@ -411,20 +464,16 @@ local function FindSpawnedEggs()
     return detectedEggs
 end
 
--- 3. LOOPING UTAMA (LARI AMBIL EGG -> BALIK KE BASE)
 task.spawn(function()
     while task.wait(1) do
         if isAutoEggActive then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
                 local hum = char.Humanoid
-                local hrp = char.HumanoidRootPart
                 
-                -- Cari egg yang sedang spawn
                 local eggsFound = FindSpawnedEggs()
                 
                 if #eggsFound > 0 then
-                    -- Ambil egg pertama yang terdeteksi
                     local targetEgg = eggsFound[1]
                     local targetPos = nil
                     
@@ -437,17 +486,14 @@ task.spawn(function()
                     end
                     
                     if targetPos then
-                        print("Lari menuju: " .. targetEgg.Name)
-                        
                         -- A. Lari Alami ke Lokasi Egg (Aman Anti-Ban)
                         hum:MoveTo(targetPos)
-                        hum.MoveToFinished:Wait() -- Tunggu sampai karakter sampai di telur
+                        hum.MoveToFinished:Wait()
                         
-                        task.wait(0.5) -- Waktu jeda buat ambil egg
+                        task.wait(0.5) -- Delay sebentar untuk mengambil egg
                         
                         -- B. Lari Balik ke Base / Garden
-                        if myBasePosition then
-                            print("Lari balik ke Base...")
+                        if myBasePosition and isAutoEggActive then
                             hum:MoveTo(myBasePosition)
                             hum.MoveToFinished:Wait()
                         end
@@ -486,8 +532,6 @@ end)
 -------------------------------------------------------------------
 -- CONTROL BUTTONS (MINIMIZE & CLOSE)
 -------------------------------------------------------------------
-
--- Floating Button Minimize (XZ)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
