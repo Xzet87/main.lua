@@ -375,6 +375,89 @@ RunService.Heartbeat:Connect(function()
         end
     end
 end)
+
+-------------------------------------------------------------------
+-- STEAL AN EGG - SAFE EGG COLLECTOR ENGINE
+-------------------------------------------------------------------
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local isAutoEggActive = false
+local myBasePosition = nil -- Menyimpan titik koordinat rumah/garden kamu
+
+-- 1. FUNGSI SAVE BASE / GARDEN
+local function SetBasePos()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
+        print("Posisi Base/Garden tersimpan!")
+    end
+end
+
+-- 2. FUNGSI UNTUK MENCARI EGG DI WORKSPACE
+local function FindSpawnedEggs()
+    local detectedEggs = {}
+    
+    -- Biasanya egg di game "Steal an Egg" tersimpan di folder Workspace
+    -- Script ini bakal otomatis memindai objek bernama 'Egg' / 'Eggs'
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            -- Deteksi nama objek yang mengandung kata "Egg"
+            if string.find(string.lower(obj.Name), "egg") and not string.find(string.lower(obj.Parent.Name), "ui") then
+                table.insert(detectedEggs, obj)
+            end
+        end
+    end
+    return detectedEggs
+end
+
+-- 3. LOOPING UTAMA (LARI AMBIL EGG -> BALIK KE BASE)
+task.spawn(function()
+    while task.wait(1) do
+        if isAutoEggActive then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
+                local hum = char.Humanoid
+                local hrp = char.HumanoidRootPart
+                
+                -- Cari egg yang sedang spawn
+                local eggsFound = FindSpawnedEggs()
+                
+                if #eggsFound > 0 then
+                    -- Ambil egg pertama yang terdeteksi
+                    local targetEgg = eggsFound[1]
+                    local targetPos = nil
+                    
+                    if targetEgg:IsA("BasePart") then
+                        targetPos = targetEgg.Position
+                    elseif targetEgg:IsA("Model") and targetEgg.PrimaryPart then
+                        targetPos = targetEgg.PrimaryPart.Position
+                    elseif targetEgg:IsA("Model") and targetEgg:FindFirstChildWhichIsA("BasePart") then
+                        targetPos = targetEgg:FindFirstChildWhichIsA("BasePart").Position
+                    end
+                    
+                    if targetPos then
+                        print("Lari menuju: " .. targetEgg.Name)
+                        
+                        -- A. Lari Alami ke Lokasi Egg (Aman Anti-Ban)
+                        hum:MoveTo(targetPos)
+                        hum.MoveToFinished:Wait() -- Tunggu sampai karakter sampai di telur
+                        
+                        task.wait(0.5) -- Waktu jeda buat ambil egg
+                        
+                        -- B. Lari Balik ke Base / Garden
+                        if myBasePosition then
+                            print("Lari balik ke Base...")
+                            hum:MoveTo(myBasePosition)
+                            hum.MoveToFinished:Wait()
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -------------------------------------------------------------------
 -- TAB SWITCHING LOGIC
 -------------------------------------------------------------------
