@@ -1,4 +1,4 @@
--- [[ EXZET HUB - ADVANCED INDEX/RARITY SYNCED AUTO STEAL ]] --
+-- [[ EXZET HUB - FIXED FULL AUTO STEAL & ZONE SCANNER ]] --
 
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -100,7 +100,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Index Rarity Synced Steal"
+Title.Text = "Exzet Hub - Working Auto Steal Fix"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -272,7 +272,7 @@ SpeedResetBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STEAL EGG & DYNAMIC INDEX/RARITY SELECTOR CONTROLS
+-- STEAL EGG & RARITY SELECTOR CONTROLS
 -------------------------------------------------------------------
 local SetBaseBtn = Instance.new("TextButton")
 SetBaseBtn.Parent = MainPage
@@ -294,14 +294,14 @@ TPBaseDirectBtn.Text = "TP Ke Base"
 TPBaseDirectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TPBaseDirectBtn.TextSize = 10
 
--- RARITY / INDEX SELECTOR BUTTONS
+-- SELECT RARITY UI BUTTONS
 local RarityLabel = Instance.new("TextLabel")
 RarityLabel.Parent = MainPage
 RarityLabel.BackgroundTransparency = 1
 RarityLabel.Position = UDim2.new(0, 0, 0, 78)
 RarityLabel.Size = UDim2.new(1, 0, 0, 15)
 RarityLabel.Font = Enum.Font.GothamBold
-RarityLabel.Text = "Pilih Rarity Index Target:"
+RarityLabel.Text = "Pilih Rarity Target Auto Steal:"
 RarityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 RarityLabel.TextSize = 11
 RarityLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -388,9 +388,8 @@ ToggleAutoStealBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STRICT INDEX/RARITY MAPPING ENGINE
+-- SCANNER BERGANTUNG KE SELECT RARITY TARGET
 -------------------------------------------------------------------
--- Fungsi mendeteksi index rarity berdasarkan hierarki tempat/parent atau nama asset di Workspace
 local function GetValidStealableEggs()
     local validEggs = {}
 
@@ -401,10 +400,10 @@ local function GetValidStealableEggs()
             local parentInstance = prompt.Parent
             local parentName = string.lower(parentInstance and parentInstance.Name or "")
             
-            -- Ambil semua nama struktur dari folder/model di atasnya sampai beberapa tingkat ke atas
+            -- Baca struktur hierarki foldernya ke atas untuk mendeteksi area/rarity
             local fullHierarchyText = actionText .. " " .. objectText .. " " .. parentName
             local currentObj = parentInstance
-            for i = 1, 4 do
+            for i = 1, 5 do
                 if currentObj and currentObj.Parent then
                     currentObj = currentObj.Parent
                     fullHierarchyText = fullHierarchyText .. " " .. string.lower(currentObj.Name)
@@ -430,14 +429,12 @@ local function GetValidStealableEggs()
             local isStealable = string.find(fullHierarchyText, "steal") or string.find(fullHierarchyText, "take") or string.find(fullHierarchyText, "grab") or isEggItem
 
             if isEggItem and isStealable and not isForbidden then
-                -- Pastikan bukan milik player lain (Humanoid character)
+                -- Pastikan bukan milik player lain
                 local charAncestor = prompt:FindFirstAncestorOfClass("Model")
                 if not (charAncestor and Players:GetPlayerFromCharacter(charAncestor)) then
                     
-                    -- Filter ketat sesuai tombol Index Rarity yang sedang dipilih user
-                    local matchTarget = string.find(fullHierarchyText, string.lower(selectedTargetRarity))
-
-                    if matchTarget then
+                    -- WAJIB: Scan mengikuti persis Rarity yang dipilih user di tombol UI
+                    if string.find(fullHierarchyText, string.lower(selectedTargetRarity)) then
                         table.insert(validEggs, prompt)
                     end
                 end
@@ -449,10 +446,10 @@ local function GetValidStealableEggs()
 end
 
 -------------------------------------------------------------------
--- REAL AUTOMATIC STEAL & 100% HOLD LOOP FROM BASE
+-- REAL AUTO STEAL & HOLD 100% LOOP (FULL TELEPORT)
 -------------------------------------------------------------------
 task.spawn(function()
-    while task.wait(0.2) do
+    while task.wait(0.25) do
         if isAutoStealActive and myBasePosition then
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
@@ -470,20 +467,19 @@ task.spawn(function()
 
                         local targetCFrame = targetPart:IsA("BasePart") and targetPart.CFrame or (targetPart:IsA("Model") and targetPart:GetPivot() or hrp.CFrame)
 
-                        -- 1. Teleport instan dari base langsung ke lokasi telur target
+                        -- 1. Teleport instan dari base ke lokasi telur target di manapun di map
                         hrp.CFrame = targetCFrame + Vector3.new(0, 3, 0)
-                        task.wait(0.12)
+                        task.wait(0.2) -- Jeda render agar game memuat prompt dengan sempurna setelah di-TP
 
-                        -- 2. EKSEKUSI HOLD 100% PROXIMITY PROMPT SECARA PAKSA
+                        -- 2. EKSEKUSI HOLD 100% PROXIMITY PROMPT
                         if fireproximityprompt then
                             fireproximityprompt(selectedPrompt)
                         end
                         
                         if selectedPrompt.InputHoldBegin then
                             selectedPrompt:InputHoldBegin()
-                            -- Tahan sesuai durasi asli prompt game ditambah jeda aman agar hold 100% tuntas
                             local holdTime = (selectedPrompt.HoldDuration and selectedPrompt.HoldDuration > 0) and selectedPrompt.HoldDuration or 0.3
-                            task.wait(holdTime + 0.15)
+                            task.wait(holdTime + 0.2) -- Menahan sampai bar hold selesai 100%
                             if selectedPrompt.InputHoldEnd then
                                 selectedPrompt:InputHoldEnd()
                             end
@@ -491,9 +487,9 @@ task.spawn(function()
                             task.wait(0.3)
                         end
 
-                        task.wait(0.1)
+                        task.wait(0.15)
 
-                        -- 3. Teleport Cepat (Blink) kembali ke Base agar bawaan telur tidak terlepas di jalan
+                        -- 3. Teleport Cepat (Blink) kembali ke Base agar telur bawaan tidak lepas di jalan
                         local startPos = hrp.Position
                         local endPos = myBasePosition
                         local dist = (endPos - startPos).Magnitude
@@ -506,11 +502,11 @@ task.spawn(function()
                         end
 
                         hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
-                        task.wait(0.5) -- Jeda waktu agar telur masuk/deposit dengan sempurna di base
+                        task.wait(0.6) -- Waktu tunggu deposit sukses di base
                     else
-                        DisplayEggLabel.Text = "Mencari Rarity [" .. selectedTargetRarity .. "] di Map..."
-                        -- Jika belum ketemu atau sedang kosong, posisikan player tetap di base agar aman
-                        if (hrp.Position - myBasePosition).Magnitude > 15 then
+                        DisplayEggLabel.Text = "Mencari Rarity [" .. selectedTargetRarity .. "]..."
+                        -- Jaga posisi tetap di base jika belum ada telur target yang spawn
+                        if (hrp.Position - myBasePosition).Magnitude > 10 then
                             hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
                         end
                     end
