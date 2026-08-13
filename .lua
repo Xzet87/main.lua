@@ -347,25 +347,36 @@ ToggleAutoStealBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- STRICT EGG FILTER ENGINE (MEMBUANG FUSE MACHINE / SHOPS)
+-- STRICT EGG FILTER ENGINE (ANTI-DNA, PET, FUSE, MACHINE, DLL)
 -------------------------------------------------------------------
 local function GetValidStealableEggs()
     local validEggs = {}
 
     for _, prompt in pairs(Workspace:GetDescendants()) do
         if prompt:IsA("ProximityPrompt") and prompt.Enabled then
-            local actionText = string.lower(prompt.ActionText)
-            local objectText = string.lower(prompt.ObjectText)
-            local parentName = string.lower(prompt.Parent.Name)
-            local fullText = actionText .. " " .. objectText .. " " .. parentName
+            local actionText = string.lower(prompt.ActionText or "")
+            local objectText = string.lower(prompt.ObjectText or "")
+            local parentName = string.lower(prompt.Parent.Name or "")
+            local fullText = actionText .. " " .. objectText .. " "  .. parentName
 
-            -- KHUSUS FILTER TELUR YANG BISA DICURI:
-            -- Mengabaikan Fuse, Craft, Shop, Sell, Upgrade
-            local isMachine = string.find(fullText, "fuse") or string.find(fullText, "craft") or string.find(fullText, "shop") or string.find(fullText, "upgrade") or string.find(fullText, "reborn")
+            -- 1. Harus mengandung kata kunci utama Telur
+            local isEggItem = string.find(fullText, "egg")
+
+            -- 2. DILARANG KERAS mengambil DNA, Pet, Mesin, Shop, Upgrade, Fuse, dll
+            local isForbidden = string.find(fullText, "dna") or 
+                                string.find(fullText, "pet") or 
+                                string.find(fullText, "fuse") or 
+                                string.find(fullText, "craft") or 
+                                string.find(fullText, "shop") or 
+                                string.find(fullText, "upgrade") or 
+                                string.find(fullText, "reborn") or
+                                string.find(fullText, "machine")
+
+            -- 3. Harus berstatus bisa dicuri/diambil
             local isStealable = string.find(fullText, "steal") or string.find(fullText, "egg") or string.find(fullText, "take") or string.find(fullText, "grab")
 
-            if isStealable and not isMachine then
-                -- Pastikan bukan milik player sendiri/player lain di base
+            if isEggItem and isStealable and not isForbidden then
+                -- 4. Cek apakah ini milik player lain / karakter player
                 local charAncestor = prompt:FindFirstAncestorOfClass("Model")
                 if not (charAncestor and Players:GetPlayerFromCharacter(charAncestor)) then
                     table.insert(validEggs, prompt)
