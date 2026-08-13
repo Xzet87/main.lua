@@ -54,17 +54,33 @@ Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 Topbar.BackgroundTransparency = 0.6
 Topbar.Size = UDim2.new(1, 0, 0, 40)
 
+-- UICorner Topbar agar tidak lancip di sudut atas
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 12)
+TopbarCorner.Parent = Topbar
+
+-- Frame penambal bagian bawah Topbar agar sudut bawahnya tetap rata
+local TopbarBottomFill = Instance.new("Frame")
+TopbarBottomFill.Name = "TopbarBottomFill"
+TopbarBottomFill.Parent = Topbar
+TopbarBottomFill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopbarBottomFill.BackgroundTransparency = 0.6
+TopbarBottomFill.BorderSizePixel = 0
+TopbarBottomFill.Position = UDim2.new(0, 0, 0.5, 0)
+TopbarBottomFill.Size = UDim2.new(1, 0, 0.5, 0)
+
 -- Title "Exzet Hub" di kiri atas
 local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
-Title.Font = Enum.Font.GothamBold -- Font Tegas
+Title.Font = Enum.Font.GothamBold
 Title.Text = "Exzet Hub"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 2
 
 -------------------------------------------------------------------
 -- NAVIGATION / TAB BUTTONS
@@ -206,17 +222,20 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE KOTAK POLOS & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE DENGAN TEKS XZ & CLOSE CONFIRMATION)
 -------------------------------------------------------------------
 
--- Floating Button Polos untuk Minimize (Tanpa Huruf XZ)
+-- Floating Button Minimize (Dengan Huruf XZ)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
 MinimizeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.Position = UDim2.new(0.02, 0, 0.2, 0)
 MinimizeBox.Size = UDim2.new(0, 40, 0, 40)
-MinimizeBox.Text = "" -- Polos tanpa huruf XZ
+MinimizeBox.Font = Enum.Font.GothamBold
+MinimizeBox.Text = "XZ" -- Menampilkan teks XZ saat di-minimize
+MinimizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBox.TextSize = 15
 MinimizeBox.Active = true
 MinimizeBox.Draggable = true
 MinimizeBox.Visible = false
@@ -248,15 +267,16 @@ MinBtn.Font = Enum.Font.GothamBold
 MinBtn.Text = "-"
 MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinBtn.TextSize = 20
+MinBtn.ZIndex = 2
 
 MinBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
-    MinimizeBox.Visible = true -- Tampilkan kotak merah polos
+    MinimizeBox.Visible = true -- Tampilkan kotak merah XZ
 end)
 
 MinimizeBox.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
-    MinimizeBox.Visible = false -- Sembunyikan kotak merah polos
+    MinimizeBox.Visible = false -- Sembunyikan kotak merah XZ
 end)
 
 -- Tombol Close (X) di Topbar
@@ -269,6 +289,7 @@ CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
 CloseBtn.TextSize = 16
+CloseBtn.ZIndex = 2
 
 -- Pop-up Konfirmasi Close
 local ConfirmFrame = Instance.new("Frame")
@@ -277,6 +298,7 @@ ConfirmFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 ConfirmFrame.Position = UDim2.new(0.15, 0, 0.25, 0)
 ConfirmFrame.Size = UDim2.new(0.7, 0, 0.5, 0)
 ConfirmFrame.Visible = false
+ConfirmFrame.ZIndex = 3
 
 local ConfirmCorner = Instance.new("UICorner")
 ConfirmCorner.CornerRadius = UDim.new(0, 8)
@@ -296,6 +318,7 @@ ConfirmText.Text = "Peringatan!\nJika di-close, Anda harus re-execute script aga
 ConfirmText.TextColor3 = Color3.fromRGB(255, 255, 255)
 ConfirmText.TextSize = 12
 ConfirmText.TextWrapped = true
+ConfirmText.ZIndex = 4
 
 local YesBtn = Instance.new("TextButton")
 YesBtn.Parent = ConfirmFrame
@@ -306,6 +329,7 @@ YesBtn.Font = Enum.Font.GothamBold
 YesBtn.Text = "Tutup UI"
 YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 YesBtn.TextSize = 13
+YesBtn.ZIndex = 4
 
 local YesCorner = Instance.new("UICorner")
 YesCorner.CornerRadius = UDim.new(0, 6)
@@ -320,6 +344,7 @@ NoBtn.Font = Enum.Font.GothamBold
 NoBtn.Text = "Batal"
 NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 NoBtn.TextSize = 13
+NoBtn.ZIndex = 4
 
 local NoCorner = Instance.new("UICorner")
 NoCorner.CornerRadius = UDim.new(0, 6)
