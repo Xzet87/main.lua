@@ -1,7 +1,6 @@
--- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT CORNER FIX) ]] --
+-- [[ EXZET HUB - CUSTOM GRADIENT UI (PERFECT CANVASGROUP FIX) ]] --
 
 local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
 
 -- Hapus UI lama jika ada
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -14,12 +13,12 @@ ExzetHubUI.Name = "ExzetHubUI"
 ExzetHubUI.Parent = CoreGui
 ExzetHubUI.ResetOnSpawn = false
 
--- CanvasGroup Utama (Memotong SEMUA sudut child dengan sempurna tanpa bocor)
+-- CanvasGroup Utama (Memotong SEMUA sudut child dengan sempurna tanpa siku lancip bocor)
 local MainFrame = Instance.new("CanvasGroup")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.GroupTransparency = 0 -- Transparansi global CanvasGroup
+MainFrame.GroupTransparency = 0
 MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 MainFrame.Size = UDim2.new(0, 450, 0, 300)
 MainFrame.Active = true
@@ -44,13 +43,13 @@ MainStroke.Color = Color3.fromRGB(255, 30, 30)
 MainStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- TOPBAR / HEADER (HITAM DAN IKUT MELENGKUNG)
+-- TOPBAR / HEADER (LENGKUNG PERFEK MENGIKUTI CANVASGROUP)
 -------------------------------------------------------------------
 local Topbar = Instance.new("Frame")
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
 Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Topbar.BackgroundTransparency = 0.5 -- Transparansi Hitam Topbar
+Topbar.BackgroundTransparency = 0.5
 Topbar.BorderSizePixel = 0
 Topbar.Size = UDim2.new(1, 0, 0, 40)
 Topbar.ZIndex = 2
@@ -210,10 +209,10 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- CONTROL BUTTONS (MINIMIZE DENGAN TEKS XZ & CLOSE CONFIRMATION)
+-- CONTROL BUTTONS (MINIMIZE DENGAN HURUF XZ)
 -------------------------------------------------------------------
 
--- Floating Button Minimize (Lengkap dengan teks XZ)
+-- Floating Button Minimize (Dengan Huruf XZ)
 local MinimizeBox = Instance.new("TextButton")
 MinimizeBox.Name = "MinimizeBox"
 MinimizeBox.Parent = ExzetHubUI
@@ -221,7 +220,7 @@ MinimizeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.Position = UDim2.new(0.02, 0, 0.2, 0)
 MinimizeBox.Size = UDim2.new(0, 42, 0, 42)
 MinimizeBox.Font = Enum.Font.GothamBold
-MinimizeBox.Text = "XZ"
+MinimizeBox.Text = "XZ" -- HURUF XZ SUDAH DITAMBAHKAN
 MinimizeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBox.TextSize = 16
 MinimizeBox.Active = true
