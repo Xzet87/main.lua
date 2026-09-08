@@ -90,11 +90,11 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 260, 1, 0)
+Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Anime Dice Pro"
+Title.Text = "Exzet Hub v1.0 (Anime Dice)" -- Kamu bisa ubah versi di sini
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
+Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MINIMIZE & CLOSE BUTTONS
@@ -282,7 +282,7 @@ local MainPage = createPage()
 local ShopPage = createPage()
 local MiscPage = createPage()
 
-MainPage.Visible = true -- Default halaman aktif
+MainPage.Visible = true
 
 -- Tab Switching Logic
 local function switchTab(activeBtn, activePage)
@@ -337,10 +337,10 @@ local function createFeatureToggle(parentPage, name, callback)
 end
 
 -------------------------------------------------------------------
--- TAB 1: MAIN (FULL AUTO: Roll, Collect Cash, Claim Rewards)
+-- TAB 1: MAIN (FULL AUTO)
 -------------------------------------------------------------------
 
--- Auto Roll (Menggunakan RollService.RF.RollDice & RE.Roll)
+-- Auto Roll Dice
 createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
     task.spawn(function()
         while state do
@@ -361,25 +361,32 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
     end)
 end)
 
--- Auto Collect Cash (Menggunakan PlotService.RE.CollectBalance)
+-- Auto Collect Cash (Metode Fisik Aman / Tidak Merusak Tombol Manual)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state)
     task.spawn(function()
         while state do
             pcall(function()
-                local network = ReplicatedStorage:FindFirstChild("Network")
-                if network and network:FindFirstChild("PlotService") then
-                    local plotService = network.PlotService
-                    if plotService:FindFirstChild("RE") and plotService.RE:FindFirstChild("CollectBalance") then
-                        plotService.RE.CollectBalance:FireServer()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, v in pairs(Workspace:GetDescendants()) do
+                        if v:IsA("BasePart") then
+                            local name = v.Name:lower()
+                            if name:find("cash") or name:find("balance") or name:find("collect") or name:find("drop") or name:find("money") then
+                                if (v.Position - hrp.Position).Magnitude < 40 then
+                                    firetouchinterest(hrp, v, 0)
+                                    firetouchinterest(hrp, v, 1)
+                                end
+                            end
+                        end
                     end
                 end
             end)
-            task.wait(0.5)
+            task.wait(1)
         end
     end)
 end)
 
--- Auto Claim Rewards (Daily, Group, Quest, Offline Earnings)
+-- Auto Claim Rewards
 createFeatureToggle(MainPage, "Auto Claim Rewards", function(state)
     task.spawn(function()
         while state do
@@ -402,10 +409,10 @@ end)
 
 
 -------------------------------------------------------------------
--- TAB 2: SHOP (Auto Sell, Upgrade Dice, Unit/Character Management)
+-- TAB 2: SHOP (Auto Sell, Upgrade Dice, Buy Dice)
 -------------------------------------------------------------------
 
--- Auto Sell (SellEquipped / UpdateAutoSell)
+-- Auto Sell Equipped
 createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state)
     task.spawn(function()
         while state do
@@ -423,15 +430,14 @@ createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state)
     end)
 end)
 
--- Auto Upgrade Dice (BuyUpgrade)
+-- Auto Buy Upgrade Dice
 createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state)
     task.spawn(function()
         while state do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network and network:FindFirstChild("BuyUpgrade") then
-                    -- Berdasarkan console: ReplicatedStorage.Network.BuyUpgrade (RemoteEvent langsung)
-                    network.BuyUpgrade:FireServer("DiceSpeed") -- Contoh argumen umum upgrade
+                    network.BuyUpgrade:FireServer("DiceSpeed")
                 end
             end)
             task.wait(1.5)
@@ -439,7 +445,7 @@ createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state)
     end)
 end)
 
--- Auto Buy Dice (DiceShopService.RE.BuyDice)
+-- Auto Buy Dice
 createFeatureToggle(ShopPage, "Auto Buy Dice", function(state)
     task.spawn(function()
         while state do
@@ -448,7 +454,7 @@ createFeatureToggle(ShopPage, "Auto Buy Dice", function(state)
                 if network and network:FindFirstChild("DiceShopService") then
                     local shop = network.DiceShopService
                     if shop:FindFirstChild("RE") and shop.RE:FindFirstChild("BuyDice") then
-                        shop.RE.BuyDice:FireServer(1) -- Membeli 1 roll/dice
+                        shop.RE.BuyDice:FireServer(1)
                     end
                 end
             end)
@@ -459,7 +465,7 @@ end)
 
 
 -------------------------------------------------------------------
--- TAB 3: MISC (WalkSpeed, Infinite Jump, Anti AFK, Webhook & Rarity)
+-- TAB 3: MISC (WalkSpeed, Infinite Jump, Anti AFK, Webhook)
 -------------------------------------------------------------------
 
 -- WalkSpeed Input & Toggle
