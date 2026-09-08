@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Clean Old GUI
@@ -50,8 +51,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -180)
-MainFrame.Size = UDim2.new(0, 450, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -175)
+MainFrame.Size = UDim2.new(0, 460, 0, 350)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -91,7 +92,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 260, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Anime Dice Ultimate"
+Title.Text = "Exzet Hub - Anime Dice Pro"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -215,7 +216,7 @@ NoBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- TAB NAVIGATION
+-- TAB NAVIGATION (MAIN, SHOP, MISC)
 -------------------------------------------------------------------
 local TabBar = Instance.new("Frame")
 TabBar.Parent = MainFrame
@@ -223,32 +224,36 @@ TabBar.BackgroundTransparency = 1
 TabBar.Position = UDim2.new(0, 8, 0, 45)
 TabBar.Size = UDim2.new(0, 100, 1, -50)
 
-local InfoTabBtn = Instance.new("TextButton")
-InfoTabBtn.Parent = TabBar
-InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-InfoTabBtn.Size = UDim2.new(1, 0, 0, 32)
-InfoTabBtn.Font = Enum.Font.GothamBold
-InfoTabBtn.Text = "Info"
-InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-InfoTabBtn.TextSize = 13
+local UIListLayoutTab = Instance.new("UIListLayout")
+UIListLayoutTab.Parent = TabBar
+UIListLayoutTab.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayoutTab.Padding = UDim.new(0, 6)
 
-local InfoCorner = Instance.new("UICorner")
-InfoCorner.CornerRadius = UDim.new(0, 6)
-InfoCorner.Parent = InfoTabBtn
+local function createTabButton(name, defaultActive)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = name
+    btn.TextSize = 13
+    btn.Parent = TabBar
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    if defaultActive then
+        btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    end
+    return btn
+end
 
-local MainTabBtn = Instance.new("TextButton")
-MainTabBtn.Parent = TabBar
-MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-MainTabBtn.Position = UDim2.new(0, 0, 0, 40)
-MainTabBtn.Size = UDim2.new(1, 0, 0, 32)
-MainTabBtn.Font = Enum.Font.GothamBold
-MainTabBtn.Text = "Main"
-MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-MainTabBtn.TextSize = 13
-
-local MainTabCorner = Instance.new("UICorner")
-MainTabCorner.CornerRadius = UDim.new(0, 6)
-MainTabCorner.Parent = MainTabBtn
+local MainTabBtn = createTabButton("Main", true)
+local ShopTabBtn = createTabButton("Shop", false)
+local MiscTabBtn = createTabButton("Misc", false)
 
 -- PAGES CONTAINER
 local ContentContainer = Instance.new("Frame")
@@ -257,61 +262,51 @@ ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 115, 0, 45)
 ContentContainer.Size = UDim2.new(1, -125, 1, -50)
 
--- INFO PAGE
-local InfoPage = Instance.new("Frame")
-InfoPage.Parent = ContentContainer
-InfoPage.BackgroundTransparency = 1
-InfoPage.Size = UDim2.new(1, 0, 1, 0)
+local function createPage()
+    local page = Instance.new("ScrollingFrame")
+    page.Parent = ContentContainer
+    page.BackgroundTransparency = 1
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.Visible = false
+    page.CanvasSize = UDim2.new(0, 0, 0, 450)
+    page.ScrollBarThickness = 4
+    
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = page
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    return page
+end
 
-local CreatorLabel = Instance.new("TextLabel")
-CreatorLabel.Parent = InfoPage
-CreatorLabel.BackgroundTransparency = 1
-CreatorLabel.Position = UDim2.new(0, 0, 0, 5)
-CreatorLabel.Size = UDim2.new(1, 0, 0, 20)
-CreatorLabel.Font = Enum.Font.GothamBold
-CreatorLabel.Text = "Pembuat: exzet"
-CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-CreatorLabel.TextSize = 14
-CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
+local MainPage = createPage()
+local ShopPage = createPage()
+local MiscPage = createPage()
 
--- MAIN PAGE (SCROLLING FRAME)
-local MainPage = Instance.new("ScrollingFrame")
-MainPage.Parent = ContentContainer
-MainPage.BackgroundTransparency = 1
-MainPage.Size = UDim2.new(1, 0, 1, 0)
-MainPage.Visible = false
-MainPage.CanvasSize = UDim2.new(0, 0, 0, 500)
-MainPage.ScrollBarThickness = 4
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = MainPage
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8)
+MainPage.Visible = true -- Default halaman aktif
 
 -- Tab Switching Logic
-InfoTabBtn.MouseButton1Click:Connect(function()
-    InfoPage.Visible = true
+local function switchTab(activeBtn, activePage)
+    MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    ShopTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); ShopTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    MiscTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35); MiscTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    
     MainPage.Visible = false
-    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-end)
+    ShopPage.Visible = false
+    MiscPage.Visible = false
+    
+    activeBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    activeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    activePage.Visible = true
+end
 
-MainTabBtn.MouseButton1Click:Connect(function()
-    MainPage.Visible = true
-    InfoPage.Visible = false
-    MainTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    MainTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    InfoTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-end)
+MainTabBtn.MouseButton1Click:Connect(function() switchTab(MainTabBtn, MainPage) end)
+ShopTabBtn.MouseButton1Click:Connect(function() switchTab(ShopTabBtn, ShopPage) end)
+MiscTabBtn.MouseButton1Click:Connect(function() switchTab(MiscTabBtn, MiscPage) end)
 
 -------------------------------------------------------------------
--- FITUR HUB UTAMA
+-- HELPER FUNGSI TOGGLE (DENGAN FIX ON/OFF)
 -------------------------------------------------------------------
-
-local function createFeatureToggle(name, callback)
+local function createFeatureToggle(parentPage, name, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -5, 0, 32)
     btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
@@ -319,7 +314,7 @@ local function createFeatureToggle(name, callback)
     btn.Text = name .. " : OFF"
     btn.TextColor3 = Color3.fromRGB(200, 200, 200)
     btn.TextSize = 12
-    btn.Parent = MainPage
+    btn.Parent = parentPage
 
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 6)
@@ -341,7 +336,133 @@ local function createFeatureToggle(name, callback)
     end)
 end
 
--- 1. WalkSpeed
+-------------------------------------------------------------------
+-- TAB 1: MAIN (FULL AUTO: Roll, Collect Cash, Claim Rewards)
+-------------------------------------------------------------------
+
+-- Auto Roll (Menggunakan RollService.RF.RollDice & RE.Roll)
+createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("RollService") then
+                    local rollService = network.RollService
+                    if rollService:FindFirstChild("RF") and rollService.RF:FindFirstChild("RollDice") then
+                        rollService.RF.RollDice:InvokeServer()
+                    end
+                    if rollService:FindFirstChild("RE") and rollService.RE:FindFirstChild("Roll") then
+                        rollService.RE.Roll:FireServer()
+                    end
+                end
+            end)
+            task.wait(0.15)
+        end
+    end)
+end)
+
+-- Auto Collect Cash (Menggunakan PlotService.RE.CollectBalance)
+createFeatureToggle(MainPage, "Auto Collect Cash", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("PlotService") then
+                    local plotService = network.PlotService
+                    if plotService:FindFirstChild("RE") and plotService.RE:FindFirstChild("CollectBalance") then
+                        plotService.RE.CollectBalance:FireServer()
+                    end
+                end
+            end)
+            task.wait(0.5)
+        end
+    end)
+end)
+
+-- Auto Claim Rewards (Daily, Group, Quest, Offline Earnings)
+createFeatureToggle(MainPage, "Auto Claim Rewards", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network then
+                    local services = {"DailyRewardService", "GroupRewardService", "QuestService", "OfflineEarningsService"}
+                    for _, sName in ipairs(services) do
+                        local serv = network:FindFirstChild(sName)
+                        if serv and serv:FindFirstChild("RE") and serv.RE:FindFirstChild("Claim") then
+                            serv.RE.Claim:FireServer()
+                        end
+                    end
+                end
+            end)
+            task.wait(2)
+        end
+    end)
+end)
+
+
+-------------------------------------------------------------------
+-- TAB 2: SHOP (Auto Sell, Upgrade Dice, Unit/Character Management)
+-------------------------------------------------------------------
+
+-- Auto Sell (SellEquipped / UpdateAutoSell)
+createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("SellService") then
+                    local sellService = network.SellService
+                    if sellService:FindFirstChild("RE") and sellService.RE:FindFirstChild("SellEquipped") then
+                        sellService.RE.SellEquipped:FireServer()
+                    end
+                end
+            end)
+            task.wait(1)
+        end
+    end)
+end)
+
+-- Auto Upgrade Dice (BuyUpgrade)
+createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("BuyUpgrade") then
+                    -- Berdasarkan console: ReplicatedStorage.Network.BuyUpgrade (RemoteEvent langsung)
+                    network.BuyUpgrade:FireServer("DiceSpeed") -- Contoh argumen umum upgrade
+                end
+            end)
+            task.wait(1.5)
+        end
+    end)
+end)
+
+-- Auto Buy Dice (DiceShopService.RE.BuyDice)
+createFeatureToggle(ShopPage, "Auto Buy Dice", function(state)
+    task.spawn(function()
+        while state do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("DiceShopService") then
+                    local shop = network.DiceShopService
+                    if shop:FindFirstChild("RE") and shop.RE:FindFirstChild("BuyDice") then
+                        shop.RE.BuyDice:FireServer(1) -- Membeli 1 roll/dice
+                    end
+                end
+            end)
+            task.wait(1)
+        end
+    end)
+end)
+
+
+-------------------------------------------------------------------
+-- TAB 3: MISC (WalkSpeed, Infinite Jump, Anti AFK, Webhook & Rarity)
+-------------------------------------------------------------------
+
+-- WalkSpeed Input & Toggle
 local speedBox = Instance.new("TextBox")
 speedBox.Size = UDim2.new(1, -5, 0, 30)
 speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -350,13 +471,13 @@ speedBox.PlaceholderText = "Masukkan WalkSpeed (default 16)"
 speedBox.Text = "16"
 speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 speedBox.TextSize = 12
-speedBox.Parent = MainPage
+speedBox.Parent = MiscPage
 
 local boxCorner = Instance.new("UICorner")
 boxCorner.CornerRadius = UDim.new(0, 6)
 boxCorner.Parent = speedBox
 
-createFeatureToggle("Custom WalkSpeed", function(state)
+createFeatureToggle(MiscPage, "Custom WalkSpeed", function(state)
     RunService.RenderStepped:Connect(function()
         if state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             local speed = tonumber(speedBox.Text) or 16
@@ -365,73 +486,20 @@ createFeatureToggle("Custom WalkSpeed", function(state)
     end)
 end)
 
--- 2. Auto Roll (Menggunakan RemoteFunction & RemoteEvent RollDice/Roll)
-createFeatureToggle("Auto Roll", function(state)
-    task.spawn(function()
-        while state and task.wait(0.15) do
-            pcall(function()
-                local network = ReplicatedStorage:FindFirstChild("Network")
-                if network and network:FindFirstChild("RollService") then
-                    local rollService = network.RollService
-                    -- Cek RemoteFunction (RF) RollDice
-                    if rollService:FindFirstChild("RF") and rollService.RF:FindFirstChild("RollDice") then
-                        rollService.RF.RollDice:InvokeServer()
-                    end
-                    -- Cek RemoteEvent (RE) Roll
-                    if rollService:FindFirstChild("RE") and rollService.RE:FindFirstChild("Roll") then
-                        rollService.RE.Roll:FireServer()
-                    end
-                end
-            end)
-        end
-    end)
+-- Infinite Jump
+local infJumpActive = false
+createFeatureToggle(MiscPage, "Infinite Jump", function(state)
+    infJumpActive = state
 end)
 
--- 3. Auto Collect Cash (Dioptimalkan kembali menyapu Workspace)
-createFeatureToggle("Auto Collect Cash", function(state)
-    task.spawn(function()
-        while state and task.wait(0.4) do
-            pcall(function()
-                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    for _, v in pairs(Workspace:GetDescendants()) do
-                        if v:IsA("BasePart") then
-                            local n = v.Name:lower()
-                            if n:find("cash") or n:find("coin") or n:find("yen") or n:find("gold") or n:find("money") or n:find("drop") then
-                                firetouchinterest(hrp, v, 0)
-                                firetouchinterest(hrp, v, 1)
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-    end)
+UserInputService.JumpRequest:Connect(function()
+    if infJumpActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
 end)
 
--- 4. Auto Claim Rewards
-createFeatureToggle("Auto Claim Rewards", function(state)
-    task.spawn(function()
-        while state and task.wait(2) do
-            pcall(function()
-                local network = ReplicatedStorage:FindFirstChild("Network")
-                if network then
-                    local daily = network:FindFirstChild("DailyRewardService")
-                    if daily and daily:FindFirstChild("RE") and daily.RE:FindFirstChild("Claim") then
-                        daily.RE.Claim:FireServer()
-                    end
-                    local group = network:FindFirstChild("GroupRewardService")
-                    if group and group:FindFirstChild("RE") and group.RE:FindFirstChild("Claim") then
-                        group.RE.Claim:FireServer()
-                    end
-                end
-            end)
-        end
-    end)
-end)
-
--- 5. Anti AFK
-createFeatureToggle("Anti AFK", function(state)
+-- Anti AFK
+createFeatureToggle(MiscPage, "Anti AFK", function(state)
     if state then
         local vu = game:GetService("VirtualUser")
         LocalPlayer.Idled:Connect(function()
@@ -444,9 +512,7 @@ createFeatureToggle("Anti AFK", function(state)
     end
 end)
 
--------------------------------------------------------------------
--- 6. WEBHOOK & RARITY FILTER CONFIGURATION
--------------------------------------------------------------------
+-- Webhook Input
 local webhookBox = Instance.new("TextBox")
 webhookBox.Size = UDim2.new(1, -5, 0, 30)
 webhookBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -455,13 +521,13 @@ webhookBox.PlaceholderText = "Paste Discord Webhook URL..."
 webhookBox.Text = ""
 webhookBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 webhookBox.TextSize = 11
-webhookBox.Parent = MainPage
+webhookBox.Parent = MiscPage
 
 local wbCorner = Instance.new("UICorner")
 wbCorner.CornerRadius = UDim.new(0, 6)
 wbCorner.Parent = webhookBox
 
--- Filter Rarity Input (Pilih Rarity yang mau di-notif, pisah dengan koma, misal: Secret,Mythical,Legendary)
+-- Rarity Filter Input
 local rarityBox = Instance.new("TextBox")
 rarityBox.Size = UDim2.new(1, -5, 0, 30)
 rarityBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -470,7 +536,7 @@ rarityBox.PlaceholderText = "Filter Rarity (cth: Secret,Mythical,Legendary)"
 rarityBox.Text = "Secret,Mythical"
 rarityBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 rarityBox.TextSize = 11
-rarityBox.Parent = MainPage
+rarityBox.Parent = MiscPage
 
 local rbCorner = Instance.new("UICorner")
 rbCorner.CornerRadius = UDim.new(0, 6)
@@ -483,7 +549,7 @@ testWebhookBtn.Font = Enum.Font.GothamBold
 testWebhookBtn.Text = "Test Webhook & Filter Rarity"
 testWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 testWebhookBtn.TextSize = 12
-testWebhookBtn.Parent = MainPage
+testWebhookBtn.Parent = MiscPage
 
 local twCorner = Instance.new("UICorner")
 twCorner.CornerRadius = UDim.new(0, 6)
@@ -491,11 +557,9 @@ twCorner.Parent = testWebhookBtn
 
 local function sendWebhook(url, itemName, itemRarity)
     if not url or url == "" then return end
-    
-    -- Cek filter rarity dari TextBox
     local filters = rarityBox.Text:lower()
     if filters ~= "" and not filters:find(itemRarity:lower()) then
-        return -- Kalau rarity tidak masuk daftar filter, batalkan kirim webhook
+        return
     end
 
     local data = {
@@ -503,7 +567,7 @@ local function sendWebhook(url, itemName, itemRarity)
         ["embeds"] = {{
             ["title"] = "⭐ Exzet Hub - High Rarity Drop Alert",
             ["description"] = "**Player:** " .. LocalPlayer.Name .. "\n**Item:** " .. itemName .. "\n**Rarity:** `" .. itemRarity .. "`",
-            ["color"] = 16766720, -- Warna Emas
+            ["color"] = 16766720,
             ["footer"] = {["text"] = "Anime Dice - Auto Notifier"}
         }}
     }
@@ -520,7 +584,6 @@ end
 testWebhookBtn.MouseButton1Click:Connect(function()
     local url = webhookBox.Text
     if url ~= "" and url:find("discord.com/api/webhooks") then
-        -- Tes kirim webhook dengan sampel rarity "Secret"
         sendWebhook(url, "Gojo / Anime God (Test)", "Secret")
         testWebhookBtn.Text = "Webhook Berhasil di-Test!"
         task.wait(2)
