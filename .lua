@@ -2,15 +2,8 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
-
--- Global Variables
-local customSpeed = 16
-local defaultSpeed = 16
-local isSpeedActive = false
-
-local isAutoStealActive = false
-local myBasePosition = nil
 
 -- Clean Old GUI
 if CoreGui:FindFirstChild("ExzetHubUI") then
@@ -49,7 +42,7 @@ IconStroke.Color = Color3.fromRGB(255, 255, 255)
 IconStroke.Thickness = 1.5
 
 -------------------------------------------------------------------
--- 2. MAIN HUB FRAME (UI ASLI RED/BLACK)
+-- 2. MAIN HUB FRAME
 -------------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -95,9 +88,9 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 220, 1, 0)
+Title.Size = UDim2.new(0, 260, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Auto Steal Fix"
+Title.Text = "Exzet Hub - All Features"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -209,15 +202,15 @@ ToggleIconBtn.MouseButton1Click:Connect(function()
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    ConfirmOverlay.Visible = true -- Munculkan warning pop-up
+    ConfirmOverlay.Visible = true
 end)
 
 YesBtn.MouseButton1Click:Connect(function()
-    ExzetHubUI:Destroy() -- Hancurkan GUI total
+    ExzetHubUI:Destroy()
 end)
 
 NoBtn.MouseButton1Click:Connect(function()
-    ConfirmOverlay.Visible = false -- Tutup pop-up warning
+    ConfirmOverlay.Visible = false
 end)
 
 -------------------------------------------------------------------
@@ -256,13 +249,14 @@ local MainTabCorner = Instance.new("UICorner")
 MainTabCorner.CornerRadius = UDim.new(0, 6)
 MainTabCorner.Parent = MainTabBtn
 
--- PAGES
+-- PAGES CONTAINER
 local ContentContainer = Instance.new("Frame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 115, 0, 45)
 ContentContainer.Size = UDim2.new(1, -125, 1, -50)
 
+-- INFO PAGE
 local InfoPage = Instance.new("Frame")
 InfoPage.Parent = ContentContainer
 InfoPage.BackgroundTransparency = 1
@@ -279,11 +273,19 @@ CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreatorLabel.TextSize = 14
 CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local MainPage = Instance.new("Frame")
+-- MAIN PAGE (FITUR-FITUR)
+local MainPage = Instance.new("ScrollingFrame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
+MainPage.CanvasSize = UDim2.new(0, 0, 0, 280)
+MainPage.ScrollBarThickness = 4
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = MainPage
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
 
 -- Tab Switching Logic
 InfoTabBtn.MouseButton1Click:Connect(function()
@@ -302,4 +304,124 @@ MainTabBtn.MouseButton1Click:Connect(function()
     MainTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     InfoTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     InfoTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+end)
+
+-------------------------------------------------------------------
+-- FITUR IMPLEMENTATION (DI DALAM MAIN PAGE)
+-------------------------------------------------------------------
+
+-- Helper buat bikin Toggle Button di Main Page
+local function createFeatureToggle(name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -5, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    btn.Font = Enum.Font.GothamBold
+    btn.Text = name .. " : OFF"
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.TextSize = 12
+    btn.Parent = MainPage
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    local active = false
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Text = name .. " : ON"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            btn.Text = name .. " : OFF"
+        end
+        callback(active)
+    end)
+end
+
+-- 1. WalkSpeed (TextBox + Toggle)
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(1, -5, 0, 30)
+speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+speedBox.Font = Enum.Font.GothamMedium
+speedBox.PlaceholderText = "Masukkan WalkSpeed (default 16)"
+speedBox.Text = "16"
+speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedBox.TextSize = 12
+speedBox.Parent = MainPage
+
+local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 6)
+boxCorner.Parent = speedBox
+
+createFeatureToggle("Custom WalkSpeed", function(state)
+    RunService.RenderStepped:Connect(function()
+        if state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local speed = tonumber(speedBox.Text) or 16
+            LocalPlayer.Character.Humanoid.WalkSpeed = speed
+        end
+    end)
+end)
+
+-- 2. Auto Roll
+createFeatureToggle("Auto Roll", function(state)
+    task.spawn(function()
+        while state and task.wait(1) do
+            pcall(function()
+                -- Sesuaikan RemoteEvent Roll game kamu di sini
+                -- Contoh: game:GetService("ReplicatedStorage").RollEvent:FireServer()
+            end)
+        end
+    end)
+end)
+
+-- 3. Auto Collect Cash
+createFeatureToggle("Auto Collect Cash", function(state)
+    task.spawn(function()
+        while state and task.wait(0.5) do
+            pcall(function()
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v.Name == "Cash" and v:IsA("BasePart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v, 0)
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v, 1)
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- 4. Anti AFK
+createFeatureToggle("Anti AFK", function(state)
+    if state then
+        local vu = game:GetService("VirtualUser")
+        LocalPlayer.Idled:Connect(function()
+            if state then
+                vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                vu:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+            end
+        end)
+    end
+end)
+
+-- 5. Webhook Function (Contoh Trigger)
+local function sendWebhook(url, message)
+    local data = {["content"] = message}
+    local body = HttpService:JSONEncode(data)
+    local headers = {["content-type"] = "application/json"}
+    local request = http_request or request or syn.request
+    if request then
+        request({Url = url, Body = body, Method = "POST", Headers = headers})
+    end
+end
+
+createFeatureToggle("Test Webhook", function(state)
+    if state then
+        -- Masukkan URL Discord Webhook kamu di dalam tanda kutip di bawah ini
+        local webhookURL = "URL_WEBHOOK_KAMU_DISINI"
+        sendWebhook(webhookURL, "Exzet Hub: Script aktif untuk player " .. LocalPlayer.Name)
+    end
 end)
