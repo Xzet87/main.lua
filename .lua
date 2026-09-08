@@ -91,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 260, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Fixed Features"
+Title.Text = "Exzet Hub - Exact Path Fix"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -280,7 +280,7 @@ MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
-MainPage.CanvasSize = UDim2.new(0, 0, 0, 380)
+MainPage.CanvasSize = UDim2.new(0, 0, 0, 400)
 MainPage.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -308,7 +308,7 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- FITUR IMPLEMENTATION (DENGAN INPUT WEBHOOK & FIX FITUR)
+-- FITUR DENGAN JALUR REMOTE ASLI DARI CONSOLE
 -------------------------------------------------------------------
 
 local function createFeatureToggle(name, callback)
@@ -365,34 +365,41 @@ createFeatureToggle("Custom WalkSpeed", function(state)
     end)
 end)
 
--- 2. Auto Roll (Mencari RemoteEvent Roll secara otomatis atau klik tombol)
+-- 2. Auto Roll (Mengarah langsung ke ReplicatedStorage.Network.RollService.RE.Roll)
 createFeatureToggle("Auto Roll", function(state)
     task.spawn(function()
         while state and task.wait(0.2) do
             pcall(function()
-                -- Cari RemoteEvent umum di ReplicatedStorage yang berkaitan dengan Roll/Spin/Gacha
-                for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                    if v:IsA("RemoteEvent") and (v.Name:lower():find("roll") or v.Name:lower():find("spin") or v.Name:lower():find("summon")) then
-                        v:FireServer()
-                    end
+                local rollEvent = ReplicatedStorage:FindFirstChild("Network") 
+                    and ReplicatedStorage.Network:FindFirstChild("RollService") 
+                    and ReplicatedStorage.Network.RollService:FindFirstChild("RE") 
+                    and ReplicatedStorage.Network.RollService.RE:FindFirstChild("Roll")
+                
+                if rollEvent then
+                    rollEvent:FireServer()
                 end
             end)
         end
     end)
 end)
 
--- 3. Auto Collect Cash / Items
-createFeatureToggle("Auto Collect Cash", function(state)
+-- 3. Auto Claim / Collect (Mengarah ke DailyRewardService & Claim services)
+createFeatureToggle("Auto Claim Rewards", function(state)
     task.spawn(function()
-        while state and task.wait(0.5) do
+        while state and task.wait(1) do
             pcall(function()
-                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    for _, v in pairs(Workspace:GetDescendants()) do
-                        if v:IsA("BasePart") and (v.Name:lower():find("cash") or v.Name:lower():find("coin") or v.Name:lower():find("gem") or v.Name:lower():find("gold")) then
-                            firetouchinterest(hrp, v, 0)
-                            firetouchinterest(hrp, v, 1)
-                        end
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network then
+                    -- Cek Claim di DailyRewardService
+                    local dailyService = network:FindFirstChild("DailyRewardService")
+                    if dailyService and dailyService:FindFirstChild("RE") and dailyService.RE:FindFirstChild("Claim") then
+                        dailyService.RE.Claim:FireServer()
+                    end
+                    
+                    -- Cek Claim di GroupRewardService
+                    local groupService = network:FindFirstChild("GroupRewardService")
+                    if groupService and groupService:FindFirstChild("RE") and groupService.RE:FindFirstChild("Claim") then
+                        groupService.RE.Claim:FireServer()
                     end
                 end
             end)
@@ -419,7 +426,7 @@ local webhookBox = Instance.new("TextBox")
 webhookBox.Size = UDim2.new(1, -5, 0, 30)
 webhookBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 webhookBox.Font = Enum.Font.GothamMedium
-webhookBox.PlaceholderText = "Paste Discord Webhook URL di sini..."
+webhookBox.PlaceholderText = "Paste Discord Webhook URL..."
 webhookBox.Text = ""
 webhookBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 webhookBox.TextSize = 11
@@ -442,15 +449,14 @@ local twCorner = Instance.new("UICorner")
 twCorner.CornerRadius = UDim.new(0, 6)
 twCorner.Parent = testWebhookBtn
 
--- Fungsi Kirim Webhook
 local function sendWebhook(url, summaryText)
     if not url or url == "" then return end
     local data = {
         ["content"] = "",
         ["embeds"] = {{
-            ["title"] = "Exzet Hub - Test Summary",
+            ["title"] = "Exzet Hub - Summary",
             ["description"] = summaryText,
-            ["color"] = 16711680, -- Warna Merah
+            ["color"] = 16711680,
             ["footer"] = {["text"] = "Player: " .. LocalPlayer.Name}
         }}
     }
@@ -467,7 +473,7 @@ end
 testWebhookBtn.MouseButton1Click:Connect(function()
     local url = webhookBox.Text
     if url ~= "" and url:find("discord.com/api/webhooks") then
-        sendWebhook(url, "✅ **Test Summary Berhasil!**\nScript Exzet Hub terhubung dengan sukses ke webhook kamu.")
+        sendWebhook(url, "✅ **Test Summary Berhasil!**\nExzet Hub terhubung sempurna dengan game.")
         testWebhookBtn.Text = "Berhasil Dikirim!"
         task.wait(2)
         testWebhookBtn.Text = "Test Summary Webhook"
