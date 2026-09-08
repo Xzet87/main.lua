@@ -1,29 +1,63 @@
--- [[ EXZET HUB - AUTO STEAL WITH RARITY FILTER ]] --
-
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
+-- Global Variables
+local customSpeed = 16
+local defaultSpeed = 16
+local isSpeedActive = false
+
 local isAutoStealActive = false
 local myBasePosition = nil
-local selectedRarity = "All" -- Pilihan default
 
-if CoreGui:FindFirstChild("ExzetHubRarityUI") then
-    CoreGui.ExzetHubRarityUI:Destroy()
+-- Clean Old GUI
+if CoreGui:FindFirstChild("ExzetHubUI") then
+    CoreGui.ExzetHubUI:Destroy()
 end
 
 local ExzetHubUI = Instance.new("ScreenGui")
-ExzetHubUI.Name = "ExzetHubRarityUI"
+ExzetHubUI.Name = "ExzetHubUI"
 ExzetHubUI.Parent = CoreGui
 ExzetHubUI.ResetOnSpawn = false
 
--- MAIN FRAME
+-------------------------------------------------------------------
+-- 1. FLOATING MINIMIZE BUTTON ("XZ")
+-------------------------------------------------------------------
+local ToggleIconBtn = Instance.new("TextButton")
+ToggleIconBtn.Name = "ToggleIconBtn"
+ToggleIconBtn.Parent = ExzetHubUI
+ToggleIconBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+ToggleIconBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
+ToggleIconBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleIconBtn.Font = Enum.Font.GothamBold
+ToggleIconBtn.Text = "XZ"
+ToggleIconBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleIconBtn.TextSize = 18
+ToggleIconBtn.Visible = false
+ToggleIconBtn.Active = true
+ToggleIconBtn.Draggable = true
+
+local IconCorner = Instance.new("UICorner")
+IconCorner.CornerRadius = UDim.new(0, 10)
+IconCorner.Parent = ToggleIconBtn
+
+local IconStroke = Instance.new("UIStroke")
+IconStroke.Parent = ToggleIconBtn
+IconStroke.Color = Color3.fromRGB(255, 255, 255)
+IconStroke.Thickness = 1.5
+
+-------------------------------------------------------------------
+-- 2. MAIN HUB FRAME (UI ASLI RED/BLACK)
+-------------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
-MainFrame.Size = UDim2.new(0, 420, 0, 320)
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -165)
+MainFrame.Size = UDim2.new(0, 450, 0, 330)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -31,214 +65,241 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
+local MainGradient = Instance.new("UIGradient")
+MainGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
+}
+MainGradient.Rotation = 45
+MainGradient.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Parent = MainFrame
+MainStroke.Color = Color3.fromRGB(255, 40, 40)
+MainStroke.Thickness = 1.5
+
+-- TOPBAR
+local Topbar = Instance.new("Frame")
+Topbar.Name = "Topbar"
+Topbar.Parent = MainFrame
+Topbar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+Topbar.BackgroundTransparency = 0.4
+Topbar.BorderSizePixel = 0
+Topbar.Size = UDim2.new(1, 0, 0, 38)
+
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 10)
+TopbarCorner.Parent = Topbar
+
 local Title = Instance.new("TextLabel")
-Title.Parent = MainFrame
+Title.Parent = Topbar
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 15, 0, 10)
-Title.Size = UDim2.new(1, -30, 0, 30)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Size = UDim2.new(0, 220, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Auto Steal by Rarity"
+Title.Text = "Exzet Hub - Auto Steal Fix"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- SET BASE BUTTON
-local SetBaseBtn = Instance.new("TextButton")
-SetBaseBtn.Parent = MainFrame
-SetBaseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-SetBaseBtn.Position = UDim2.new(0, 15, 0, 50)
-SetBaseBtn.Size = UDim2.new(0, 185, 0, 35)
-SetBaseBtn.Font = Enum.Font.GothamBold
-SetBaseBtn.Text = "1. Set Posisi Base"
-SetBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SetBaseBtn.TextSize = 12
+-- MINIMIZE & CLOSE BUTTONS
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Parent = Topbar
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MinimizeBtn.Position = UDim2.new(1, -70, 0, 6)
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 26)
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 16
 
-local SetBaseCorner = Instance.new("UICorner")
-SetBaseCorner.CornerRadius = UDim.new(0, 6)
-SetBaseCorner.Parent = SetBaseBtn
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeBtn
 
--- TP BASE BUTTON
-local TPBaseBtn = Instance.new("TextButton")
-TPBaseBtn.Parent = MainFrame
-TPBaseBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 0)
-TPBaseBtn.Position = UDim2.new(0, 210, 0, 50)
-TPBaseBtn.Size = UDim2.new(0, 185, 0, 35)
-TPBaseBtn.Font = Enum.Font.GothamBold
-TPBaseBtn.Text = "TP Ke Base"
-TPBaseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TPBaseBtn.TextSize = 12
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = Topbar
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+CloseBtn.Position = UDim2.new(1, -36, 0, 6)
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
 
-local TPBaseCorner = Instance.new("UICorner")
-TPBaseCorner.CornerRadius = UDim.new(0, 6)
-TPBaseCorner.Parent = TPBaseBtn
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
 
--- RARITY LABEL & DROPDOWN SIMULATION BUTTONS
-local RarityLabel = Instance.new("TextLabel")
-RarityLabel.Parent = MainFrame
-RarityLabel.BackgroundTransparency = 1
-RarityLabel.Position = UDim2.new(0, 15, 0, 95)
-RarityLabel.Size = UDim2.new(1, -30, 0, 20)
-RarityLabel.Font = Enum.Font.GothamBold
-RarityLabel.Text = "Pilih Target Rarity: [ All ]"
-RarityLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-RarityLabel.TextSize:getmetatable = nil
-RarityLabel.TextSize = 12
-RarityLabel.TextXAlignment = Enum.TextXAlignment.Left
+-------------------------------------------------------------------
+-- 3. CONFIRMATION POPUP (WARNING CLOSE)
+-------------------------------------------------------------------
+local ConfirmOverlay = Instance.new("Frame")
+ConfirmOverlay.Name = "ConfirmOverlay"
+ConfirmOverlay.Parent = ExzetHubUI
+ConfirmOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ConfirmOverlay.BackgroundTransparency = 0.5
+ConfirmOverlay.Size = UDim2.new(1, 0, 1, 0)
+ConfirmOverlay.Visible = false
+ConfirmOverlay.Active = true
 
--- Tombol Pilihan Rarity (All, Epic, Legendary, Mythic)
-local rarities = {"All", "Epic", "Legendary", "Mythic"}
-for i, rarityName in ipairs(rarities) do
-    local rBtn = Instance.new("TextButton")
-    rBtn.Parent = MainFrame
-    rBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    rBtn.Position = UDim2.new(0, 15 + ((i-1) * 95), 0, 120)
-    rBtn.Size = UDim2.new(0, 90, 0, 30)
-    rBtn.Font = Enum.Font.GothamBold
-    rBtn.Text = rarityName
-    rBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rBtn.TextSize = 11
+local ConfirmBox = Instance.new("Frame")
+ConfirmBox.Parent = ConfirmOverlay
+ConfirmBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+ConfirmBox.Position = UDim2.new(0.5, -150, 0.5, -75)
+ConfirmBox.Size = UDim2.new(0, 300, 0, 130)
 
-    local rCorner = Instance.new("UICorner")
-    rCorner.CornerRadius = UDim.new(0, 5)
-    rCorner.Parent = rBtn
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 8)
+BoxCorner.Parent = ConfirmBox
 
-    rBtn.MouseButton1Click:Connect(function()
-        selectedRarity = rarityName
-        RarityLabel.Text = "Pilih Target Rarity: [ " .. rarityName .. " ]"
-    end)
-end
+local BoxStroke = Instance.new("UIStroke")
+BoxStroke.Parent = ConfirmBox
+BoxStroke.Color = Color3.fromRGB(255, 50, 50)
+BoxStroke.Thickness = 1.5
 
--- STATUS LABEL
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Parent = MainFrame
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Position = UDim2.new(0, 15, 0, 165)
-StatusLabel.Size = UDim2.new(1, -30, 0, 25)
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.Text = "Status: Nonaktif"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
-StatusLabel.TextSize = 12
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+local WarningText = Instance.new("TextLabel")
+WarningText.Parent = ConfirmBox
+WarningText.BackgroundTransparency = 1
+WarningText.Position = UDim2.new(0, 10, 0, 15)
+WarningText.Size = UDim2.new(1, -20, 0, 50)
+WarningText.Font = Enum.Font.GothamMedium
+WarningText.Text = "Yakin ingin menutup Hub?\nKamu harus Re-Execute script jika ingin membukanya kembali!"
+WarningText.TextColor3 = Color3.fromRGB(255, 255, 255)
+WarningText.TextSize = 12
+WarningText.TextWrapped = true
 
--- AUTO STEAL TOGGLE BUTTON
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Parent = MainFrame
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleBtn.Position = UDim2.new(0, 15, 0, 200)
-ToggleBtn.Size = UDim2.new(0, 380, 0, 45)
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.Text = "AUTO STEAL RARITY: OFF"
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.TextSize = 13
+local YesBtn = Instance.new("TextButton")
+YesBtn.Parent = ConfirmBox
+YesBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+YesBtn.Position = UDim2.new(0, 20, 1, -45)
+YesBtn.Size = UDim2.new(0, 120, 0, 30)
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.Text = "Ya, Tutup"
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.TextSize = 12
 
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 6)
-ToggleCorner.Parent = ToggleBtn
+local YesCorner = Instance.new("UICorner")
+YesCorner.CornerRadius = UDim.new(0, 6)
+YesCorner.Parent = YesBtn
 
--- LOGIC TOMBOL DASAR
-SetBaseBtn.MouseButton1Click:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        myBasePosition = LocalPlayer.Character.HumanoidRootPart.Position
-        SetBaseBtn.Text = "Base Tersimpan!"
-        task.wait(1)
-        SetBaseBtn.Text = "1. Set Posisi Base"
-    end
+local NoBtn = Instance.new("TextButton")
+NoBtn.Parent = ConfirmBox
+NoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+NoBtn.Position = UDim2.new(1, -140, 1, -45)
+NoBtn.Size = UDim2.new(0, 120, 0, 30)
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.Text = "Batal"
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.TextSize = 12
+
+local NoCorner = Instance.new("UICorner")
+NoCorner.CornerRadius = UDim.new(0, 6)
+NoCorner.Parent = NoBtn
+
+-- Button Event Logic
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    ToggleIconBtn.Visible = true
 end)
 
-TPBaseBtn.MouseButton1Click:Connect(function()
-    if myBasePosition and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
-    end
+ToggleIconBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    ToggleIconBtn.Visible = false
 end)
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    isAutoStealActive = not isAutoStealActive
-    if isAutoStealActive then
-        if not myBasePosition then
-            StatusLabel.Text = "❌ Set Posisi Base Dulu!"
-            isAutoStealActive = false
-            return
-        end
-        ToggleBtn.Text = "AUTO STEAL RARITY: ON"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    else
-        ToggleBtn.Text = "AUTO STEAL RARITY: OFF"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        StatusLabel.Text = "Status: Nonaktif"
-    end
+CloseBtn.MouseButton1Click:Connect(function()
+    ConfirmOverlay.Visible = true -- Munculkan warning pop-up
 end)
 
--- FILTER SCANNER BERDASARKAN RARITY DAN SMARTPROMPT
-local function GetFilteredEggs()
-    local eggs = {}
-    local objectsFolder = Workspace:FindFirstChild("__OBJECTS")
-    local searchRoot = objectsFolder or Workspace
-    
-    for _, obj in pairs(searchRoot:GetDescendants()) do
-        if obj.Name == "SmartPromptPart" and obj:IsA("BasePart") then
-            -- Cek nama parent atau atribut untuk mencocokkan rarity
-            local parentName = obj.Parent and obj.Parent.Name:lower() or ""
-            local matchesRarity = false
+YesBtn.MouseButton1Click:Connect(function()
+    ExzetHubUI:Destroy() -- Hancurkan GUI total
+end)
 
-            if selectedRarity == "All" then
-                matchesRarity = true
-            elseif string.find(parentName, selectedRarity:lower()) then
-                matchesRarity = true
-            else
-                -- Cek apakah ada teks rarity di dalam model/folder terkait
-                for _, child in pairs(obj.Parent:GetDescendants()) do
-                    if child:IsA("TextLabel") and string.find(child.Text:lower(), selectedRarity:lower()) then
-                        matchesRarity = true
-                        break
-                    end
-                end
-            end
+NoBtn.MouseButton1Click:Connect(function()
+    ConfirmOverlay.Visible = false -- Tutup pop-up warning
+end)
 
-            if matchesRarity then
-                table.insert(eggs, obj)
-            end
-        end
-    end
-    return eggs
-end
+-------------------------------------------------------------------
+-- TAB NAVIGATION
+-------------------------------------------------------------------
+local TabBar = Instance.new("Frame")
+TabBar.Parent = MainFrame
+TabBar.BackgroundTransparency = 1
+TabBar.Position = UDim2.new(0, 8, 0, 45)
+TabBar.Size = UDim2.new(0, 100, 1, -50)
 
--- AUTO LOOP EKsekusi PENCURIAN OTOMATIS
-task.spawn(function()
-    while task.wait(0.3) do
-        if isAutoStealActive and myBasePosition then
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
-                local hrp = char.HumanoidRootPart
-                local hum = char.Humanoid
+local InfoTabBtn = Instance.new("TextButton")
+InfoTabBtn.Parent = TabBar
+InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+InfoTabBtn.Size = UDim2.new(1, 0, 0, 32)
+InfoTabBtn.Font = Enum.Font.GothamBold
+InfoTabBtn.Text = "Info"
+InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+InfoTabBtn.TextSize = 13
 
-                if hum.Health > 0 then
-                    local targetEggs = GetFilteredEggs()
+local InfoCorner = Instance.new("UICorner")
+InfoCorner.CornerRadius = UDim.new(0, 6)
+InfoCorner.Parent = InfoTabBtn
 
-                    if #targetEggs > 0 then
-                        local targetPart = targetEggs[1]
-                        StatusLabel.Text = "Mencuri Telur Rarity: " .. selectedRarity
+local MainTabBtn = Instance.new("TextButton")
+MainTabBtn.Parent = TabBar
+MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainTabBtn.Position = UDim2.new(0, 0, 0, 40)
+MainTabBtn.Size = UDim2.new(1, 0, 0, 32)
+MainTabBtn.Font = Enum.Font.GothamBold
+MainTabBtn.Text = "Main"
+MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+MainTabBtn.TextSize = 13
 
-                        -- 1. Teleport otomatis ke target telur
-                        hrp.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-                        task.wait(0.25)
+local MainTabCorner = Instance.new("UICorner")
+MainTabCorner.CornerRadius = UDim.new(0, 6)
+MainTabCorner.Parent = MainTabBtn
 
-                        -- 2. Simulasi interaksi touch
-                        if firetouchinterest then
-                            firetouchinterest(hrp, targetPart, 0)
-                            task.wait(0.05)
-                            firetouchinterest(hrp, targetPart, 1)
-                        end
+-- PAGES
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Parent = MainFrame
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 115, 0, 45)
+ContentContainer.Size = UDim2.new(1, -125, 1, -50)
 
-                        task.wait(0.2)
+local InfoPage = Instance.new("Frame")
+InfoPage.Parent = ContentContainer
+InfoPage.BackgroundTransparency = 1
+InfoPage.Size = UDim2.new(1, 0, 1, 0)
 
-                        -- 3. Teleport balik otomatis ke base
-                        hrp.CFrame = CFrame.new(myBasePosition + Vector3.new(0, 3, 0))
-                        task.wait(0.8)
-                    else
-                        StatusLabel.Text = "Menunggu Telur " .. selectedRarity .. " Muncul..."
-                    end
-                end
-            end
-        end
-    end
+local CreatorLabel = Instance.new("TextLabel")
+CreatorLabel.Parent = InfoPage
+CreatorLabel.BackgroundTransparency = 1
+CreatorLabel.Position = UDim2.new(0, 0, 0, 5)
+CreatorLabel.Size = UDim2.new(1, 0, 0, 20)
+CreatorLabel.Font = Enum.Font.GothamBold
+CreatorLabel.Text = "Pembuat: exzet"
+CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+CreatorLabel.TextSize = 14
+CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local MainPage = Instance.new("Frame")
+MainPage.Parent = ContentContainer
+MainPage.BackgroundTransparency = 1
+MainPage.Size = UDim2.new(1, 0, 1, 0)
+MainPage.Visible = false
+
+-- Tab Switching Logic
+InfoTabBtn.MouseButton1Click:Connect(function()
+    InfoPage.Visible = true
+    MainPage.Visible = false
+    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    InfoTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MainTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    MainTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+end)
+
+MainTabBtn.MouseButton1Click:Connect(function()
+    MainPage.Visible = true
+    InfoPage.Visible = false
+    MainTabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    MainTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    InfoTabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    InfoTabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
 end)
