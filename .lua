@@ -92,7 +92,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.0 (Anime Dice)" -- Kamu bisa ubah versi di sini
+Title.Text = "Exzet Hub v1.1 (Anime Dice)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -361,27 +361,33 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
     end)
 end)
 
--- Auto Collect Cash (Metode Fisik Aman / Tidak Merusak Tombol Manual)
+-- Auto Collect Cash (Pencarian ProximityPrompt / Part Collect di Plot Pemain)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state)
     task.spawn(function()
         while state do
             pcall(function()
-                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    for _, v in pairs(Workspace:GetDescendants()) do
-                        if v:IsA("BasePart") then
-                            local name = v.Name:lower()
-                            if name:find("cash") or name:find("balance") or name:find("collect") or name:find("drop") or name:find("money") then
-                                if (v.Position - hrp.Position).Magnitude < 40 then
-                                    firetouchinterest(hrp, v, 0)
-                                    firetouchinterest(hrp, v, 1)
-                                end
-                            end
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                -- Coba tembak langsung CollectBalance dengan argumen kosong/aman jika tersedia
+                if network and network:FindFirstChild("PlotService") then
+                    local plotService = network.PlotService
+                    if plotService:FindFirstChild("RE") and plotService.RE:FindFirstChild("CollectBalance") then
+                        plotService.RE.CollectBalance:FireServer()
+                    end
+                end
+                
+                -- Pendekatan fisik menyapu ProximityPrompt atau ClickDetector di sekitar plot/map
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") then
+                        local parentName = obj.Parent and obj.Parent.Name:lower() or ""
+                        if parentName:find("cash") or parentName:find("money") or parentName:find("balance") or parentName:find("collect") or parentName:find("plot") then
+                            fireproximityprompt(obj)
                         end
+                    elseif obj:IsA("ClickDetector") then
+                        fireclickdetector(obj)
                     end
                 end
             end)
-            task.wait(1)
+            task.wait(0.5)
         end
     end)
 end)
