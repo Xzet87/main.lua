@@ -50,8 +50,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -165)
-MainFrame.Size = UDim2.new(0, 450, 0, 330)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -180)
+MainFrame.Size = UDim2.new(0, 450, 0, 360)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -91,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 260, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Exact Path Fix"
+Title.Text = "Exzet Hub - Anime Dice Ultimate"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -280,7 +280,7 @@ MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
-MainPage.CanvasSize = UDim2.new(0, 0, 0, 400)
+MainPage.CanvasSize = UDim2.new(0, 0, 0, 500)
 MainPage.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -308,7 +308,7 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- FITUR DENGAN JALUR REMOTE ASLI DARI CONSOLE
+-- FITUR HUB UTAMA
 -------------------------------------------------------------------
 
 local function createFeatureToggle(name, callback)
@@ -365,41 +365,64 @@ createFeatureToggle("Custom WalkSpeed", function(state)
     end)
 end)
 
--- 2. Auto Roll (Mengarah langsung ke ReplicatedStorage.Network.RollService.RE.Roll)
+-- 2. Auto Roll (Menggunakan RemoteFunction & RemoteEvent RollDice/Roll)
 createFeatureToggle("Auto Roll", function(state)
     task.spawn(function()
-        while state and task.wait(0.2) do
+        while state and task.wait(0.15) do
             pcall(function()
-                local rollEvent = ReplicatedStorage:FindFirstChild("Network") 
-                    and ReplicatedStorage.Network:FindFirstChild("RollService") 
-                    and ReplicatedStorage.Network.RollService:FindFirstChild("RE") 
-                    and ReplicatedStorage.Network.RollService.RE:FindFirstChild("Roll")
-                
-                if rollEvent then
-                    rollEvent:FireServer()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network and network:FindFirstChild("RollService") then
+                    local rollService = network.RollService
+                    -- Cek RemoteFunction (RF) RollDice
+                    if rollService:FindFirstChild("RF") and rollService.RF:FindFirstChild("RollDice") then
+                        rollService.RF.RollDice:InvokeServer()
+                    end
+                    -- Cek RemoteEvent (RE) Roll
+                    if rollService:FindFirstChild("RE") and rollService.RE:FindFirstChild("Roll") then
+                        rollService.RE.Roll:FireServer()
+                    end
                 end
             end)
         end
     end)
 end)
 
--- 3. Auto Claim / Collect (Mengarah ke DailyRewardService & Claim services)
+-- 3. Auto Collect Cash (Dioptimalkan kembali menyapu Workspace)
+createFeatureToggle("Auto Collect Cash", function(state)
+    task.spawn(function()
+        while state and task.wait(0.4) do
+            pcall(function()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, v in pairs(Workspace:GetDescendants()) do
+                        if v:IsA("BasePart") then
+                            local n = v.Name:lower()
+                            if n:find("cash") or n:find("coin") or n:find("yen") or n:find("gold") or n:find("money") or n:find("drop") then
+                                firetouchinterest(hrp, v, 0)
+                                firetouchinterest(hrp, v, 1)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- 4. Auto Claim Rewards
 createFeatureToggle("Auto Claim Rewards", function(state)
     task.spawn(function()
-        while state and task.wait(1) do
+        while state and task.wait(2) do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
-                    -- Cek Claim di DailyRewardService
-                    local dailyService = network:FindFirstChild("DailyRewardService")
-                    if dailyService and dailyService:FindFirstChild("RE") and dailyService.RE:FindFirstChild("Claim") then
-                        dailyService.RE.Claim:FireServer()
+                    local daily = network:FindFirstChild("DailyRewardService")
+                    if daily and daily:FindFirstChild("RE") and daily.RE:FindFirstChild("Claim") then
+                        daily.RE.Claim:FireServer()
                     end
-                    
-                    -- Cek Claim di GroupRewardService
-                    local groupService = network:FindFirstChild("GroupRewardService")
-                    if groupService and groupService:FindFirstChild("RE") and groupService.RE:FindFirstChild("Claim") then
-                        groupService.RE.Claim:FireServer()
+                    local group = network:FindFirstChild("GroupRewardService")
+                    if group and group:FindFirstChild("RE") and group.RE:FindFirstChild("Claim") then
+                        group.RE.Claim:FireServer()
                     end
                 end
             end)
@@ -407,7 +430,7 @@ createFeatureToggle("Auto Claim Rewards", function(state)
     end)
 end)
 
--- 4. Anti AFK
+-- 5. Anti AFK
 createFeatureToggle("Anti AFK", function(state)
     if state then
         local vu = game:GetService("VirtualUser")
@@ -421,7 +444,9 @@ createFeatureToggle("Anti AFK", function(state)
     end
 end)
 
--- 5. Webhook Input & Test Summary Button
+-------------------------------------------------------------------
+-- 6. WEBHOOK & RARITY FILTER CONFIGURATION
+-------------------------------------------------------------------
 local webhookBox = Instance.new("TextBox")
 webhookBox.Size = UDim2.new(1, -5, 0, 30)
 webhookBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -436,11 +461,26 @@ local wbCorner = Instance.new("UICorner")
 wbCorner.CornerRadius = UDim.new(0, 6)
 wbCorner.Parent = webhookBox
 
+-- Filter Rarity Input (Pilih Rarity yang mau di-notif, pisah dengan koma, misal: Secret,Mythical,Legendary)
+local rarityBox = Instance.new("TextBox")
+rarityBox.Size = UDim2.new(1, -5, 0, 30)
+rarityBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+rarityBox.Font = Enum.Font.GothamMedium
+rarityBox.PlaceholderText = "Filter Rarity (cth: Secret,Mythical,Legendary)"
+rarityBox.Text = "Secret,Mythical"
+rarityBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+rarityBox.TextSize = 11
+rarityBox.Parent = MainPage
+
+local rbCorner = Instance.new("UICorner")
+rbCorner.CornerRadius = UDim.new(0, 6)
+rbCorner.Parent = rarityBox
+
 local testWebhookBtn = Instance.new("TextButton")
 testWebhookBtn.Size = UDim2.new(1, -5, 0, 32)
 testWebhookBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 180)
 testWebhookBtn.Font = Enum.Font.GothamBold
-testWebhookBtn.Text = "Test Summary Webhook"
+testWebhookBtn.Text = "Test Webhook & Filter Rarity"
 testWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 testWebhookBtn.TextSize = 12
 testWebhookBtn.Parent = MainPage
@@ -449,15 +489,22 @@ local twCorner = Instance.new("UICorner")
 twCorner.CornerRadius = UDim.new(0, 6)
 twCorner.Parent = testWebhookBtn
 
-local function sendWebhook(url, summaryText)
+local function sendWebhook(url, itemName, itemRarity)
     if not url or url == "" then return end
+    
+    -- Cek filter rarity dari TextBox
+    local filters = rarityBox.Text:lower()
+    if filters ~= "" and not filters:find(itemRarity:lower()) then
+        return -- Kalau rarity tidak masuk daftar filter, batalkan kirim webhook
+    end
+
     local data = {
-        ["content"] = "",
+        ["content"] = "@everyone Hoki Besar! Dapat item langka!",
         ["embeds"] = {{
-            ["title"] = "Exzet Hub - Summary",
-            ["description"] = summaryText,
-            ["color"] = 16711680,
-            ["footer"] = {["text"] = "Player: " .. LocalPlayer.Name}
+            ["title"] = "⭐ Exzet Hub - High Rarity Drop Alert",
+            ["description"] = "**Player:** " .. LocalPlayer.Name .. "\n**Item:** " .. itemName .. "\n**Rarity:** `" .. itemRarity .. "`",
+            ["color"] = 16766720, -- Warna Emas
+            ["footer"] = {["text"] = "Anime Dice - Auto Notifier"}
         }}
     }
     local body = HttpService:JSONEncode(data)
@@ -473,13 +520,14 @@ end
 testWebhookBtn.MouseButton1Click:Connect(function()
     local url = webhookBox.Text
     if url ~= "" and url:find("discord.com/api/webhooks") then
-        sendWebhook(url, "✅ **Test Summary Berhasil!**\nExzet Hub terhubung sempurna dengan game.")
-        testWebhookBtn.Text = "Berhasil Dikirim!"
+        -- Tes kirim webhook dengan sampel rarity "Secret"
+        sendWebhook(url, "Gojo / Anime God (Test)", "Secret")
+        testWebhookBtn.Text = "Webhook Berhasil di-Test!"
         task.wait(2)
-        testWebhookBtn.Text = "Test Summary Webhook"
+        testWebhookBtn.Text = "Test Webhook & Filter Rarity"
     else
         testWebhookBtn.Text = "URL Webhook Salah!"
         task.wait(2)
-        testWebhookBtn.Text = "Test Summary Webhook"
+        testWebhookBtn.Text = "Test Webhook & Filter Rarity"
     end
 end)
