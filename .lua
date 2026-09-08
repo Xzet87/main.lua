@@ -92,7 +92,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.1 (Anime Dice)"
+Title.Text = "Exzet Hub v1.2 (Anime Dice)" -- Sesuaikan versi di sini
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -304,8 +304,10 @@ ShopTabBtn.MouseButton1Click:Connect(function() switchTab(ShopTabBtn, ShopPage) 
 MiscTabBtn.MouseButton1Click:Connect(function() switchTab(MiscTabBtn, MiscPage) end)
 
 -------------------------------------------------------------------
--- HELPER FUNGSI TOGGLE (DENGAN FIX ON/OFF)
+-- HELPER FUNGSI TOGGLE (DENGAN FIX STATE OFF TOTAL)
 -------------------------------------------------------------------
+local activeFeatures = {}
+
 local function createFeatureToggle(parentPage, name, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -5, 0, 32)
@@ -320,10 +322,13 @@ local function createFeatureToggle(parentPage, name, callback)
     corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = btn
 
-    local active = false
+    activeFeatures[name] = false
+
     btn.MouseButton1Click:Connect(function()
-        active = not active
-        if active then
+        activeFeatures[name] = not activeFeatures[name]
+        local state = activeFeatures[name]
+        
+        if state then
             btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Text = name .. " : ON"
@@ -332,7 +337,10 @@ local function createFeatureToggle(parentPage, name, callback)
             btn.TextColor3 = Color3.fromRGB(200, 200, 200)
             btn.Text = name .. " : OFF"
         end
-        callback(active)
+        
+        callback(state, function()
+            return activeFeatures[name]
+        end)
     end)
 end
 
@@ -341,9 +349,10 @@ end
 -------------------------------------------------------------------
 
 -- Auto Roll Dice
-createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
+createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network and network:FindFirstChild("RollService") then
@@ -361,41 +370,44 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state)
     end)
 end)
 
--- Auto Collect Cash (Pencarian ProximityPrompt / Part Collect di Plot Pemain)
-createFeatureToggle(MainPage, "Auto Collect Cash", function(state)
+-- Auto Collect Cash (Aman & Berhenti Total Saat OFF)
+createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
-                local network = ReplicatedStorage:FindFirstChild("Network")
-                -- Coba tembak langsung CollectBalance dengan argumen kosong/aman jika tersedia
-                if network and network:FindFirstChild("PlotService") then
-                    local plotService = network.PlotService
-                    if plotService:FindFirstChild("RE") and plotService.RE:FindFirstChild("CollectBalance") then
-                        plotService.RE.CollectBalance:FireServer()
-                    end
-                end
-                
-                -- Pendekatan fisik menyapu ProximityPrompt atau ClickDetector di sekitar plot/map
-                for _, obj in pairs(Workspace:GetDescendants()) do
-                    if obj:IsA("ProximityPrompt") then
-                        local parentName = obj.Parent and obj.Parent.Name:lower() or ""
-                        if parentName:find("cash") or parentName:find("money") or parentName:find("balance") or parentName:find("collect") or parentName:find("plot") then
-                            fireproximityprompt(obj)
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, folder in pairs(Workspace:GetChildren()) do
+                        local folderName = folder.Name:lower()
+                        if folderName:find("plot") or folderName:find("tycoon") or folderName:find("base") then
+                            local ownerVal = folder:FindFirstChild("Owner") or folder:FindFirstChild("Player")
+                            if ownerVal and (ownerVal.Value == LocalPlayer or ownerVal.Value == LocalPlayer.Name) then
+                                for _, obj in pairs(folder:GetDescendants()) do
+                                    if obj:IsA("BasePart") then
+                                        local objName = obj.Name:lower()
+                                        -- Hanya menyentuh part cash/money murni di plot sendiri
+                                        if (objName:find("cash") or objName:find("money") or objName:find("drop") or objName:find("balance")) and not objName:find("upgrade") then
+                                            firetouchinterest(hrp, obj, 0)
+                                            firetouchinterest(hrp, obj, 1)
+                                        end
+                                    end
+                                end
+                            end
                         end
-                    elseif obj:IsA("ClickDetector") then
-                        fireclickdetector(obj)
                     end
                 end
             end)
-            task.wait(0.5)
+            task.wait(1)
         end
     end)
 end)
 
 -- Auto Claim Rewards
-createFeatureToggle(MainPage, "Auto Claim Rewards", function(state)
+createFeatureToggle(MainPage, "Auto Claim Rewards", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
@@ -419,9 +431,10 @@ end)
 -------------------------------------------------------------------
 
 -- Auto Sell Equipped
-createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state)
+createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network and network:FindFirstChild("SellService") then
@@ -437,9 +450,10 @@ createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state)
 end)
 
 -- Auto Buy Upgrade Dice
-createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state)
+createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network and network:FindFirstChild("BuyUpgrade") then
@@ -452,9 +466,10 @@ createFeatureToggle(ShopPage, "Auto Buy Upgrade Dice", function(state)
 end)
 
 -- Auto Buy Dice
-createFeatureToggle(ShopPage, "Auto Buy Dice", function(state)
+createFeatureToggle(ShopPage, "Auto Buy Dice", function(state, isRunning)
+    if not state then return end
     task.spawn(function()
-        while state do
+        while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network and network:FindFirstChild("DiceShopService") then
@@ -489,11 +504,20 @@ local boxCorner = Instance.new("UICorner")
 boxCorner.CornerRadius = UDim.new(0, 6)
 boxCorner.Parent = speedBox
 
-createFeatureToggle(MiscPage, "Custom WalkSpeed", function(state)
-    RunService.RenderStepped:Connect(function()
-        if state and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            local speed = tonumber(speedBox.Text) or 16
-            LocalPlayer.Character.Humanoid.WalkSpeed = speed
+createFeatureToggle(MiscPage, "Custom WalkSpeed", function(state, isRunning)
+    task.spawn(function()
+        while isRunning() do
+            pcall(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    local speed = tonumber(speedBox.Text) or 16
+                    LocalPlayer.Character.Humanoid.WalkSpeed = speed
+                end
+            end)
+            task.wait(0.1)
+        end
+        -- Reset speed saat dimatikan
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = 16
         end
     end)
 end)
@@ -511,17 +535,25 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 -- Anti AFK
-createFeatureToggle(MiscPage, "Anti AFK", function(state)
-    if state then
+createFeatureToggle(MiscPage, "Anti AFK", function(state, isRunning)
+    if not state then return end
+    task.spawn(function()
         local vu = game:GetService("VirtualUser")
-        LocalPlayer.Idled:Connect(function()
-            if state then
+        local connection
+        connection = LocalPlayer.Idled:Connect(function()
+            if isRunning() then
                 vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
                 task.wait(1)
                 vu:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
             end
         end)
-    end
+        while isRunning() do
+            task.wait(1)
+        end
+        if connection then
+            connection:Disconnect()
+        end
+    end)
 end)
 
 -- Webhook Input
