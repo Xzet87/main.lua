@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 -- Clean Old GUI
@@ -90,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 260, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - All Features"
+Title.Text = "Exzet Hub - Fixed Features"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -273,13 +274,13 @@ CreatorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreatorLabel.TextSize = 14
 CreatorLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- MAIN PAGE (FITUR-FITUR)
+-- MAIN PAGE (SCROLLING FRAME)
 local MainPage = Instance.new("ScrollingFrame")
 MainPage.Parent = ContentContainer
 MainPage.BackgroundTransparency = 1
 MainPage.Size = UDim2.new(1, 0, 1, 0)
 MainPage.Visible = false
-MainPage.CanvasSize = UDim2.new(0, 0, 0, 280)
+MainPage.CanvasSize = UDim2.new(0, 0, 0, 380)
 MainPage.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -307,10 +308,9 @@ MainTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
--- FITUR IMPLEMENTATION (DI DALAM MAIN PAGE)
+-- FITUR IMPLEMENTATION (DENGAN INPUT WEBHOOK & FIX FITUR)
 -------------------------------------------------------------------
 
--- Helper buat bikin Toggle Button di Main Page
 local function createFeatureToggle(name, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -5, 0, 32)
@@ -341,7 +341,7 @@ local function createFeatureToggle(name, callback)
     end)
 end
 
--- 1. WalkSpeed (TextBox + Toggle)
+-- 1. WalkSpeed
 local speedBox = Instance.new("TextBox")
 speedBox.Size = UDim2.new(1, -5, 0, 30)
 speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -365,27 +365,34 @@ createFeatureToggle("Custom WalkSpeed", function(state)
     end)
 end)
 
--- 2. Auto Roll
+-- 2. Auto Roll (Mencari RemoteEvent Roll secara otomatis atau klik tombol)
 createFeatureToggle("Auto Roll", function(state)
     task.spawn(function()
-        while state and task.wait(1) do
+        while state and task.wait(0.2) do
             pcall(function()
-                -- Sesuaikan RemoteEvent Roll game kamu di sini
-                -- Contoh: game:GetService("ReplicatedStorage").RollEvent:FireServer()
+                -- Cari RemoteEvent umum di ReplicatedStorage yang berkaitan dengan Roll/Spin/Gacha
+                for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+                    if v:IsA("RemoteEvent") and (v.Name:lower():find("roll") or v.Name:lower():find("spin") or v.Name:lower():find("summon")) then
+                        v:FireServer()
+                    end
+                end
             end)
         end
     end)
 end)
 
--- 3. Auto Collect Cash
+-- 3. Auto Collect Cash / Items
 createFeatureToggle("Auto Collect Cash", function(state)
     task.spawn(function()
         while state and task.wait(0.5) do
             pcall(function()
-                for _, v in pairs(Workspace:GetDescendants()) do
-                    if v.Name == "Cash" and v:IsA("BasePart") and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v, 0)
-                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, v, 1)
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, v in pairs(Workspace:GetDescendants()) do
+                        if v:IsA("BasePart") and (v.Name:lower():find("cash") or v.Name:lower():find("coin") or v.Name:lower():find("gem") or v.Name:lower():find("gold")) then
+                            firetouchinterest(hrp, v, 0)
+                            firetouchinterest(hrp, v, 1)
+                        end
                     end
                 end
             end)
@@ -407,21 +414,66 @@ createFeatureToggle("Anti AFK", function(state)
     end
 end)
 
--- 5. Webhook Function (Contoh Trigger)
-local function sendWebhook(url, message)
-    local data = {["content"] = message}
+-- 5. Webhook Input & Test Summary Button
+local webhookBox = Instance.new("TextBox")
+webhookBox.Size = UDim2.new(1, -5, 0, 30)
+webhookBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+webhookBox.Font = Enum.Font.GothamMedium
+webhookBox.PlaceholderText = "Paste Discord Webhook URL di sini..."
+webhookBox.Text = ""
+webhookBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+webhookBox.TextSize = 11
+webhookBox.Parent = MainPage
+
+local wbCorner = Instance.new("UICorner")
+wbCorner.CornerRadius = UDim.new(0, 6)
+wbCorner.Parent = webhookBox
+
+local testWebhookBtn = Instance.new("TextButton")
+testWebhookBtn.Size = UDim2.new(1, -5, 0, 32)
+testWebhookBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 180)
+testWebhookBtn.Font = Enum.Font.GothamBold
+testWebhookBtn.Text = "Test Summary Webhook"
+testWebhookBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+testWebhookBtn.TextSize = 12
+testWebhookBtn.Parent = MainPage
+
+local twCorner = Instance.new("UICorner")
+twCorner.CornerRadius = UDim.new(0, 6)
+twCorner.Parent = testWebhookBtn
+
+-- Fungsi Kirim Webhook
+local function sendWebhook(url, summaryText)
+    if not url or url == "" then return end
+    local data = {
+        ["content"] = "",
+        ["embeds"] = {{
+            ["title"] = "Exzet Hub - Test Summary",
+            ["description"] = summaryText,
+            ["color"] = 16711680, -- Warna Merah
+            ["footer"] = {["text"] = "Player: " .. LocalPlayer.Name}
+        }}
+    }
     local body = HttpService:JSONEncode(data)
     local headers = {["content-type"] = "application/json"}
     local request = http_request or request or syn.request
     if request then
-        request({Url = url, Body = body, Method = "POST", Headers = headers})
+        pcall(function()
+            request({Url = url, Body = body, Method = "POST", Headers = headers})
+        end)
     end
 end
 
-createFeatureToggle("Test Webhook", function(state)
-    if state then
-        -- Masukkan URL Discord Webhook kamu di dalam tanda kutip di bawah ini
-        local webhookURL = "URL_WEBHOOK_KAMU_DISINI"
-        sendWebhook(webhookURL, "Exzet Hub: Script aktif untuk player " .. LocalPlayer.Name)
+testWebhookBtn.MouseButton1Click:Connect(function()
+    local url = webhookBox.Text
+    if url ~= "" and url:find("discord.com/api/webhooks") then
+        sendWebhook(url, "✅ **Test Summary Berhasil!**\nScript Exzet Hub terhubung dengan sukses ke webhook kamu.")
+        testWebhookBtn.Text = "Berhasil Dikirim!"
+        task.wait(2)
+        testWebhookBtn.Text = "Test Summary Webhook"
+    else
+        testWebhookBtn.Text = "URL Webhook Salah!"
+        task.wait(2)
+        testWebhookBtn.Text = "Test Summary Webhook"
     end
 end)
