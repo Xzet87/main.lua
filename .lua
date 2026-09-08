@@ -92,7 +92,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.3 (Anime Dice - Ultimate)"
+Title.Text = "Exzet Hub v1.4 (Anime Dice - Direct Fix)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -348,7 +348,7 @@ end
 -- TAB 1: MAIN (FULL AUTO)
 -------------------------------------------------------------------
 
--- Auto Roll Dice
+-- Auto Roll Dice (Support Remote dan ClickDetector langsung ke mesin kalau ada)
 createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -364,13 +364,20 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
                         rollService.RE.Roll:FireServer()
                     end
                 end
+                
+                -- Alternatif jika pakai klik object mesin roll di workspace
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj:IsA("ClickDetector") and (obj.Parent.Name:lower():find("roll") or obj.Parent.Name:lower():find("dice")) then
+                        fireclickdetector(obj)
+                    end
+                end
             end)
-            task.wait(0.15)
+            task.wait(0.2)
         end
     end)
 end)
 
--- Auto Collect Cash (Teleport Tipis ke Tombol Hijau Plot Sendiri)
+-- Auto Collect Cash (Teleport kilat & Trigger ProximityPrompt / Touch Langsung ke Plot Milik Sendiri)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -384,16 +391,22 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                             local ownerVal = folder:FindFirstChild("Owner") or folder:FindFirstChild("Player")
                             if ownerVal and (ownerVal.Value == LocalPlayer or ownerVal.Value == LocalPlayer.Name) then
                                 for _, obj in pairs(folder:GetDescendants()) do
-                                    if obj:IsA("BasePart") then
+                                    -- Cek ProximityPrompt di plot
+                                    if obj:IsA("ProximityPrompt") then
+                                        fireproximityprompt(obj)
+                                    -- Cek ClickDetector di plot
+                                    elseif obj:IsA("ClickDetector") then
+                                        fireclickdetector(obj)
+                                    -- Cek Part collector/button hijau di plot
+                                    elseif obj:IsA("BasePart") then
                                         local objName = obj.Name:lower()
-                                        -- Deteksi tombol collect / claim / collector / part hijau di plot
-                                        if objName:find("collect") or objName:find("claim") or objName:find("collector") or (obj.Color and obj.Color.G > obj.Color.R and obj.Color.G > obj.Color.B) then
+                                        if objName:find("collect") or objName:find("claim") or objName:find("money") or objName:find("cash") or (obj.Color and obj.Color.G > 0.6 and obj.Color.R < 0.3) then
                                             local oldPos = hrp.CFrame
                                             hrp.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-                                            task.wait(0.1)
+                                            task.wait(0.05)
                                             firetouchinterest(hrp, obj, 0)
                                             firetouchinterest(hrp, obj, 1)
-                                            task.wait(0.2)
+                                            task.wait(0.1)
                                             hrp.CFrame = oldPos
                                             break
                                         end
@@ -404,7 +417,7 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                     end
                 end
             end)
-            task.wait(2.5)
+            task.wait(2)
         end
     end)
 end)
@@ -417,16 +430,20 @@ createFeatureToggle(MainPage, "Auto Claim Rewards", function(state, isRunning)
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
-                    local services = {"DailyRewardService", "GroupRewardService", "QuestService", "OfflineEarningsService"}
+                    local services = {"DailyRewardService", "GroupRewardService", "QuestService", "OfflineEarningsService", "RewardService"}
                     for _, sName in ipairs(services) do
                         local serv = network:FindFirstChild(sName)
-                        if serv and serv:FindFirstChild("RE") and serv.RE:FindFirstChild("Claim") then
-                            serv.RE.Claim:FireServer()
+                        if serv then
+                            if serv:FindFirstChild("RE") and serv.RE:FindFirstChild("Claim") then
+                                serv.RE.Claim:FireServer()
+                            elseif serv:FindFirstChild("RF") and serv.RF:FindFirstChild("Claim") then
+                                serv.RF.Claim:InvokeServer()
+                            end
                         end
                     end
                 end
             end)
-            task.wait(2)
+            task.wait(3)
         end
     end)
 end)
@@ -450,7 +467,7 @@ createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state, isRunning)
                     end
                 end
             end)
-            task.wait(1)
+            task.wait(1.5)
         end
     end)
 end)
@@ -463,15 +480,16 @@ createFeatureToggle(ShopPage, "Auto Best Equipped", function(state, isRunning)
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
-                    -- Cari Inventory / Equipment Service yang biasa dipakai di game tycoon/dice untuk auto equip terbaik
-                    local equipServices = {"InventoryService", "EquipmentService", "DiceService", "CardService"}
+                    local equipServices = {"InventoryService", "EquipmentService", "DiceService", "CardService", "ItemService"}
                     for _, sName in ipairs(equipServices) do
                         local serv = network:FindFirstChild(sName)
                         if serv then
-                            if serv:FindFirstChild("RE") and serv.RE:FindFirstChild("EquipBest") then
-                                serv.RE.EquipBest:FireServer()
-                            elseif serv:FindFirstChild("RF") and serv.RF:FindFirstChild("EquipBest") then
-                                serv.RF.EquipBest:InvokeServer()
+                            if serv:FindFirstChild("RE") then
+                                if serv.RE:FindFirstChild("EquipBest") then serv.RE.EquipBest:FireServer() end
+                                if serv.RE:FindFirstChild("EquipBestRarity") then serv.RE.EquipBestRarity:FireServer() end
+                            end
+                            if serv:FindFirstChild("RF") then
+                                if serv.RF:FindFirstChild("EquipBest") then serv.RF.EquipBest:InvokeServer() end
                             end
                         end
                     end
