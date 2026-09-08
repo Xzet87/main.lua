@@ -51,8 +51,8 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -230, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 460, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -230, 0.5, -185)
+MainFrame.Size = UDim2.new(0, 460, 0, 380)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -92,7 +92,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.2 (Anime Dice)" -- Sesuaikan versi di sini
+Title.Text = "Exzet Hub v1.3 (Anime Dice - Ultimate)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -268,7 +268,7 @@ local function createPage()
     page.BackgroundTransparency = 1
     page.Size = UDim2.new(1, 0, 1, 0)
     page.Visible = false
-    page.CanvasSize = UDim2.new(0, 0, 0, 450)
+    page.CanvasSize = UDim2.new(0, 0, 0, 500)
     page.ScrollBarThickness = 4
     
     local layout = Instance.new("UIListLayout")
@@ -370,7 +370,7 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     end)
 end)
 
--- Auto Collect Cash (Aman & Berhenti Total Saat OFF)
+-- Auto Collect Cash (Teleport Tipis ke Tombol Hijau Plot Sendiri)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -386,10 +386,16 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                                 for _, obj in pairs(folder:GetDescendants()) do
                                     if obj:IsA("BasePart") then
                                         local objName = obj.Name:lower()
-                                        -- Hanya menyentuh part cash/money murni di plot sendiri
-                                        if (objName:find("cash") or objName:find("money") or objName:find("drop") or objName:find("balance")) and not objName:find("upgrade") then
+                                        -- Deteksi tombol collect / claim / collector / part hijau di plot
+                                        if objName:find("collect") or objName:find("claim") or objName:find("collector") or (obj.Color and obj.Color.G > obj.Color.R and obj.Color.G > obj.Color.B) then
+                                            local oldPos = hrp.CFrame
+                                            hrp.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+                                            task.wait(0.1)
                                             firetouchinterest(hrp, obj, 0)
                                             firetouchinterest(hrp, obj, 1)
+                                            task.wait(0.2)
+                                            hrp.CFrame = oldPos
+                                            break
                                         end
                                     end
                                 end
@@ -398,7 +404,7 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                     end
                 end
             end)
-            task.wait(1)
+            task.wait(2.5)
         end
     end)
 end)
@@ -427,7 +433,7 @@ end)
 
 
 -------------------------------------------------------------------
--- TAB 2: SHOP (Auto Sell, Upgrade Dice, Buy Dice)
+-- TAB 2: SHOP & BEST EQUIPPED
 -------------------------------------------------------------------
 
 -- Auto Sell Equipped
@@ -445,6 +451,33 @@ createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state, isRunning)
                 end
             end)
             task.wait(1)
+        end
+    end)
+end)
+
+-- Auto Best Equipped (Berdasarkan Rarity & Per Second Otomatis)
+createFeatureToggle(ShopPage, "Auto Best Equipped", function(state, isRunning)
+    if not state then return end
+    task.spawn(function()
+        while isRunning() do
+            pcall(function()
+                local network = ReplicatedStorage:FindFirstChild("Network")
+                if network then
+                    -- Cari Inventory / Equipment Service yang biasa dipakai di game tycoon/dice untuk auto equip terbaik
+                    local equipServices = {"InventoryService", "EquipmentService", "DiceService", "CardService"}
+                    for _, sName in ipairs(equipServices) do
+                        local serv = network:FindFirstChild(sName)
+                        if serv then
+                            if serv:FindFirstChild("RE") and serv.RE:FindFirstChild("EquipBest") then
+                                serv.RE.EquipBest:FireServer()
+                            elseif serv:FindFirstChild("RF") and serv.RF:FindFirstChild("EquipBest") then
+                                serv.RF.EquipBest:InvokeServer()
+                            end
+                        end
+                    end
+                end
+            end)
+            task.wait(3)
         end
     end)
 end)
@@ -486,7 +519,7 @@ end)
 
 
 -------------------------------------------------------------------
--- TAB 3: MISC (WalkSpeed, Infinite Jump, Anti AFK, Webhook)
+-- TAB 3: MISC & WEBHOOK SETTINGS
 -------------------------------------------------------------------
 
 -- WalkSpeed Input & Toggle
@@ -515,7 +548,6 @@ createFeatureToggle(MiscPage, "Custom WalkSpeed", function(state, isRunning)
             end)
             task.wait(0.1)
         end
-        -- Reset speed saat dimatikan
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.WalkSpeed = 16
         end
@@ -556,7 +588,7 @@ createFeatureToggle(MiscPage, "Anti AFK", function(state, isRunning)
     end)
 end)
 
--- Webhook Input
+-- Webhook Inputs & Mode Config
 local webhookBox = Instance.new("TextBox")
 webhookBox.Size = UDim2.new(1, -5, 0, 30)
 webhookBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -571,12 +603,11 @@ local wbCorner = Instance.new("UICorner")
 wbCorner.CornerRadius = UDim.new(0, 6)
 wbCorner.Parent = webhookBox
 
--- Rarity Filter Input
 local rarityBox = Instance.new("TextBox")
 rarityBox.Size = UDim2.new(1, -5, 0, 30)
 rarityBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 rarityBox.Font = Enum.Font.GothamMedium
-rarityBox.PlaceholderText = "Filter Rarity (cth: Secret,Mythical,Legendary)"
+rarityBox.PlaceholderText = "Filter Rarity (cth: Secret,Mythical)"
 rarityBox.Text = "Secret,Mythical"
 rarityBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 rarityBox.TextSize = 11
@@ -609,7 +640,7 @@ local function sendWebhook(url, itemName, itemRarity)
     local data = {
         ["content"] = "@everyone Hoki Besar! Dapat item langka!",
         ["embeds"] = {{
-            ["title"] = "⭐ Exzet Hub - High Rarity Drop Alert",
+            ["title"] = "⭐ Exzet Hub - Drop Alert",
             ["description"] = "**Player:** " .. LocalPlayer.Name .. "\n**Item:** " .. itemName .. "\n**Rarity:** `" .. itemRarity .. "`",
             ["color"] = 16766720,
             ["footer"] = {["text"] = "Anime Dice - Auto Notifier"}
