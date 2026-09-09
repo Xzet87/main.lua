@@ -91,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.8 (Clean & Stable Fix)"
+Title.Text = "Exzet Hub v1.9 (Balance Hitbox Fix)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -344,16 +344,15 @@ local function createFeatureToggle(parentPage, name, callback)
 end
 
 -------------------------------------------------------------------
--- TAB 1: MAIN (STABLE AUTO ROLL & COLLECT)
+-- TAB 1: MAIN
 -------------------------------------------------------------------
 
--- Auto Roll Dice (Menggunakan simulasi klik tombol UI & Multi-Remote Backup)
+-- Auto Roll Dice (Stabil & Jalan)
 createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     if not state then return end
     task.spawn(function()
         while isRunning() do
             pcall(function()
-                -- Metode 1: Cari RemoteEvent/Function di ReplicatedStorage
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
                     local rollServ = network:FindFirstChild("RollService") or network:FindFirstChild("Roll")
@@ -369,7 +368,6 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
                     end
                 end
                 
-                -- Metode 2: Simulasi klik tombol Roll di PlayerGui (paling ampuh kalau remote diblock)
                 local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
                 if playerGui then
                     for _, gui in pairs(playerGui:GetDescendants()) do
@@ -389,7 +387,7 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     end)
 end)
 
--- Auto Collect Cash (Menyapu semua kotak hijau sekaligus tanpa teleport)
+-- Auto Collect Cash (FIXED: Menargetkan folder/parent 'Balance' dengan part Hitbox/Main)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -399,8 +397,11 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                 if hrp and firetouchinterest then
                     for _, obj in pairs(Workspace:GetDescendants()) do
                         if obj:IsA("BasePart") then
-                            local name = obj.Name:lower()
-                            if name:find("collect") or name:find("cash") or name:find("money") or name:find("balance") or (obj.Color and obj.Color.G > 0.5 and obj.Color.R < 0.3) then
+                            local pName = obj.Name:lower()
+                            local parentName = obj.Parent and obj.Parent.Name:lower() or ""
+                            
+                            -- Deteksi spesifik kotak hijau Balance / Hitbox / Main / Collect
+                            if parentName == "balance" or pName == "hitbox" or pName == "main" or pName:find("collect") or pName:find("cash") then
                                 firetouchinterest(hrp, obj, 0)
                                 firetouchinterest(hrp, obj, 1)
                             end
@@ -408,7 +409,7 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                     end
                 end
             end)
-            task.wait(0.3)
+            task.wait(0.2)
         end
     end)
 end)
@@ -463,7 +464,7 @@ createFeatureToggle(ShopPage, "Auto Sell Equipped", function(state, isRunning)
     end)
 end)
 
--- Auto Best Equipped
+-- Auto Best Equipped (FIXED: Mencakup lebih banyak variasi remote Equip Best)
 createFeatureToggle(ShopPage, "Auto Best Equipped", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -471,22 +472,44 @@ createFeatureToggle(ShopPage, "Auto Best Equipped", function(state, isRunning)
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
-                    local equipServices = {"InventoryService", "EquipmentService", "DiceService", "CardService", "ItemService"}
+                    local equipServices = {"InventoryService", "EquipmentService", "DiceService", "CardService", "ItemService", "BestService"}
                     for _, sName in ipairs(equipServices) do
                         local serv = network:FindFirstChild(sName)
                         if serv then
                             if serv:FindFirstChild("RE") then
-                                if serv.RE:FindFirstChild("EquipBest") then serv.RE.EquipBest:FireServer() end
-                                if serv.RE:FindFirstChild("EquipBestRarity") then serv.RE.EquipBestRarity:FireServer() end
+                                for _, remote in pairs(serv.RE:GetChildren()) do
+                                    if remote:IsA("RemoteEvent") and (remote.Name:lower():find("best") or remote.Name:lower():find("equip")) then
+                                        remote:FireServer()
+                                    end
+                                end
                             end
                             if serv:FindFirstChild("RF") then
-                                if serv.RF:FindFirstChild("EquipBest") then serv.RF.EquipBest:InvokeServer() end
+                                for _, remote in pairs(serv.RF:GetChildren()) do
+                                    if remote:IsA("RemoteFunction") and (remote.Name:lower():find("best") or remote.Name:lower():find("equip")) then
+                                        remote:InvokeServer()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                -- Simulasi klik tombol UI Best di layar jika ada
+                local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+                if playerGui then
+                    for _, gui in pairs(playerGui:GetDescendants()) do
+                        if gui:IsA("TextButton") or gui:IsA("ImageButton") then
+                            local gName = gui.Name:lower()
+                            if gName:find("best") or gName:find("equipevery") then
+                                for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
+                                    connection:Fire()
+                                end
                             end
                         end
                     end
                 end
             end)
-            task.wait(3)
+            task.wait(2)
         end
     end)
 end)
