@@ -1,6 +1,7 @@
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Clean Old GUI
@@ -14,15 +15,15 @@ ExzetHubUI.Parent = CoreGui
 ExzetHubUI.ResetOnSpawn = false
 
 -------------------------------------------------------------------
--- MAIN HUB FRAME (MINIMALIS)
+-- MAIN HUB FRAME (MINIMALIS DENGAN MINIMIZE)
 -------------------------------------------------------------------
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -130)
-MainFrame.Size = UDim2.new(0, 320, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -145)
+MainFrame.Size = UDim2.new(0, 320, 0, 310)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -59,18 +60,32 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 240, 1, 0)
+Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Movement"
+Title.Text = "Exzet Hub - Ontop"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- CONTAINER UTAMA (UNTUK EFEK MINIMIZE)
+local ContentContainer = Instance.new("ScrollingFrame")
+ContentContainer.Parent = MainFrame
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Position = UDim2.new(0, 15, 0, 50)
+ContentContainer.Size = UDim2.new(1, -30, 1, -60)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 300)
+ContentContainer.ScrollBarThickness = 4
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ContentContainer
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 10)
 
 -- CLOSE BUTTON
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = Topbar
 CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-CloseBtn.Position = UDim2.new(1, -36, 0, 6)
+CloseBtn.Position = UDim2.new(1, -34, 0, 6)
 CloseBtn.Size = UDim2.new(0, 26, 0, 26)
 CloseBtn.Font = Enum.Font.GothamBold
 CloseBtn.Text = "X"
@@ -85,23 +100,37 @@ CloseBtn.MouseButton1Click:Connect(function()
     ExzetHubUI:Destroy()
 end)
 
--------------------------------------------------------------------
--- CONTAINER & CONTROLS
--------------------------------------------------------------------
-local ContentContainer = Instance.new("ScrollingFrame")
-ContentContainer.Parent = MainFrame
-ContentContainer.BackgroundTransparency = 1
-ContentContainer.Position = UDim2.new(0, 15, 0, 50)
-ContentContainer.Size = UDim2.new(1, -30, 1, -60)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 250)
-ContentContainer.ScrollBarThickness = 4
+-- MINIMIZE BUTTON (-)
+local isMinimized = false
+local MinBtn = Instance.new("TextButton")
+MinBtn.Parent = Topbar
+MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+MinBtn.Position = UDim2.new(1, -66, 0, 6)
+MinBtn.Size = UDim2.new(0, 26, 0, 26)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 14
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Parent = ContentContainer
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 10)
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinBtn
 
--- 1. WALKSPEED SETTINGS
+MinBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    ContentContainer.Visible = not isMinimized
+    if isMinimized then
+        MainFrame.Size = UDim2.new(0, 320, 0, 38)
+        MinBtn.Text = "+"
+    else
+        MainFrame.Size = UDim2.new(0, 320, 0, 310)
+        MinBtn.Text = "-"
+    end
+end)
+
+-------------------------------------------------------------------
+-- 1. WALKSPEED & NOCLIP (TEMBUS TEMBOK / BARRIER)
+-------------------------------------------------------------------
 local speedBox = Instance.new("TextBox")
 speedBox.Size = UDim2.new(1, 0, 0, 32)
 speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -143,19 +172,57 @@ speedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-task.spawn(function()
-    while true do
-        pcall(function()
-            if speedActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                local spd = tonumber(speedBox.Text) or 16
-                LocalPlayer.Character.Humanoid.WalkSpeed = spd
-            end
-        end)
-        task.wait(0.1)
+-- Noclip Toggle (Tembus Barrier/Tembok tanpa error catch)
+local noclipActive = false
+local noclipBtn = Instance.new("TextButton")
+noclipBtn.Size = UDim2.new(1, 0, 0, 32)
+noclipBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+noclipBtn.Font = Enum.Font.GothamBold
+noclipBtn.Text = "Noclip (Tembus Tembok) : OFF"
+noclipBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+noclipBtn.TextSize = 12
+noclipBtn.Parent = ContentContainer
+
+local ncBtnCorner = Instance.new("UICorner")
+ncBtnCorner.CornerRadius = UDim.new(0, 6)
+ncBtnCorner.Parent = noclipBtn
+
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipActive = not noclipActive
+    if noclipActive then
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        noclipBtn.Text = "Noclip (Tembus Tembok) : ON"
+    else
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        noclipBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        noclipBtn.Text = "Noclip (Tembus Tembok) : OFF"
     end
 end)
 
+-- Eksekusi WalkSpeed & Noclip secara aman per frame
+RunService.Stepped:Connect(function()
+    pcall(function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            if speedActive then
+                local spd = tonumber(speedBox.Text) or 16
+                LocalPlayer.Character.Humanoid.WalkSpeed = spd
+            end
+            
+            if noclipActive then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-------------------------------------------------------------------
 -- 2. JUMPHEIGHT SETTINGS
+-------------------------------------------------------------------
 local jumpBox = Instance.new("TextBox")
 jumpBox.Size = UDim2.new(1, 0, 0, 32)
 jumpBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
@@ -202,7 +269,7 @@ task.spawn(function()
         pcall(function()
             if jumpActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 local hum = LocalPlayer.Character.Humanoid
-                hum.UseJumpPower = false -- Pastikan pakai mode Height
+                hum.UseJumpPower = false
                 local jmp = tonumber(jumpBox.Text) or 7.2
                 hum.JumpHeight = jmp
             end
@@ -211,7 +278,9 @@ task.spawn(function()
     end
 end)
 
+-------------------------------------------------------------------
 -- 3. INFINITE JUMP
+-------------------------------------------------------------------
 local infJumpActive = false
 local infJumpBtn = Instance.new("TextButton")
 infJumpBtn.Size = UDim2.new(1, 0, 0, 32)
