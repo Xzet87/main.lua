@@ -89,9 +89,9 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Topbar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.Size = UDim2.new(0, 280, 1, 0)
+Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.6 (Anime Dice - Touch Fix)"
+Title.Text = "Exzet Hub v1.7 (Roll & Collect Fix)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -344,60 +344,65 @@ local function createFeatureToggle(parentPage, name, callback)
 end
 
 -------------------------------------------------------------------
--- TAB 1: MAIN (FULL AUTO)
+-- TAB 1: MAIN (FULL AUTO FIXED)
 -------------------------------------------------------------------
 
--- Auto Roll Dice
+-- Auto Roll Dice (Fixed: Mencakup semua jenis Remote RE/RF Roll dari console)
 createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     if not state then return end
     task.spawn(function()
         while isRunning() do
             pcall(function()
                 local network = ReplicatedStorage:FindFirstChild("Network")
-                if network and network:FindFirstChild("RollService") then
-                    local rollService = network.RollService
-                    if rollService:FindFirstChild("RF") and rollService.RF:FindFirstChild("RollDice") then
-                        rollService.RF.RollDice:InvokeServer()
+                if network then
+                    -- Cari ke RollService atau RollService / RollDice langsung
+                    local rollService = network:FindFirstChild("RollService") or network:FindFirstChild("Roll")
+                    if rollService then
+                        if rollService:FindFirstChild("RF") then
+                            if rollService.RF:FindFirstChild("RollDice") then rollService.RF.RollDice:InvokeServer() end
+                            if rollService.RF:FindFirstChild("Roll") then rollService.RF.Roll:InvokeServer() end
+                        end
+                        if rollService:FindFirstChild("RE") then
+                            if rollService.RE:FindFirstChild("Roll") then rollService.RE.Roll:FireServer() end
+                            if rollService.RE:FindFirstChild("RollDice") then rollService.RE.RollDice:FireServer() end
+                        end
                     end
-                    if rollService:FindFirstChild("RE") and rollService.RE:FindFirstChild("Roll") then
-                        rollService.RE.Roll:FireServer()
+                    -- Cadangan langsung ke Network jika ada RF RollDice / Roll
+                    if network:FindFirstChild("RollDice") then
+                        if network.RollDice:IsA("RemoteFunction") then network.RollDice:InvokeServer()
+                        elseif network.RollDice:IsA("RemoteEvent") then network.RollDice:FireServer() end
+                    end
+                    if network:FindFirstChild("Roll") then
+                        if network.Roll:IsA("RemoteFunction") then network.Roll:InvokeServer()
+                        elseif network.Roll:IsA("RemoteEvent") then network.Roll:FireServer() end
                     end
                 end
             end)
-            task.wait(0.2)
+            task.wait(0.15)
         end
     end)
 end)
 
--- Auto Collect Cash (Fixed: Menyentuh/menginjak kotak hijau collector di map secara otomatis)
+-- Auto Collect Cash (Fixed: Menyapu semua kotak hijau tanpa teleport karakter)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
         while isRunning() do
             pcall(function()
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
+                if hrp and firetouchinterest then
                     for _, obj in pairs(Workspace:GetDescendants()) do
                         if obj:IsA("BasePart") then
                             local name = obj.Name:lower()
-                            -- Deteksi kotak hijau tempat kumpul cash/income di game
                             if name:find("collect") or name:find("cash") or name:find("money") or name:find("balance") or (obj.Color and obj.Color.G > 0.5 and obj.Color.R < 0.3) then
-                                local oldPos = hrp.CFrame
-                                hrp.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-                                task.wait(0.05)
-                                if firetouchinterest then
-                                    firetouchinterest(hrp, obj, 0)
-                                    firetouchinterest(hrp, obj, 1)
-                                end
-                                task.wait(0.1)
-                                hrp.CFrame = oldPos
-                                break
+                                firetouchinterest(hrp, obj, 0)
+                                firetouchinterest(hrp, obj, 1)
                             end
                         end
                     end
                 end
             end)
-            task.wait(1.5)
+            task.wait(0.4)
         end
     end)
 end)
@@ -639,7 +644,7 @@ local function sendWebhook(url, itemName, itemRarity)
         ["content"] = "@everyone Hoki Besar! Dapat item langka!",
         ["embeds"] = {{
             ["title"] = "⭐ Exzet Hub - Drop Alert",
-            ["description"] = "**Player:** " .. LocalPlayer.Name .. "\n**Item:** " .. itemName .. "\n**Rarity:** `" .. itemRarity .. "`",
+            ["description"] = "**Player:** " + LocalPlayer.Name + "\n**Item:** " + itemName + "\n**Rarity:** `" + itemRarity + "`",
             ["color"] = 16766720,
             ["footer"] = {["text"] = "Anime Dice - Auto Notifier"}
         }}
