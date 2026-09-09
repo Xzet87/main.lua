@@ -91,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.7 (Roll & Collect Fix)"
+Title.Text = "Exzet Hub v1.8 (Clean & Stable Fix)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -344,37 +344,43 @@ local function createFeatureToggle(parentPage, name, callback)
 end
 
 -------------------------------------------------------------------
--- TAB 1: MAIN (FULL AUTO FIXED)
+-- TAB 1: MAIN (STABLE AUTO ROLL & COLLECT)
 -------------------------------------------------------------------
 
--- Auto Roll Dice (Fixed: Mencakup semua jenis Remote RE/RF Roll dari console)
+-- Auto Roll Dice (Menggunakan simulasi klik tombol UI & Multi-Remote Backup)
 createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     if not state then return end
     task.spawn(function()
         while isRunning() do
             pcall(function()
+                -- Metode 1: Cari RemoteEvent/Function di ReplicatedStorage
                 local network = ReplicatedStorage:FindFirstChild("Network")
                 if network then
-                    -- Cari ke RollService atau RollService / RollDice langsung
-                    local rollService = network:FindFirstChild("RollService") or network:FindFirstChild("Roll")
-                    if rollService then
-                        if rollService:FindFirstChild("RF") then
-                            if rollService.RF:FindFirstChild("RollDice") then rollService.RF.RollDice:InvokeServer() end
-                            if rollService.RF:FindFirstChild("Roll") then rollService.RF.Roll:InvokeServer() end
+                    local rollServ = network:FindFirstChild("RollService") or network:FindFirstChild("Roll")
+                    if rollServ then
+                        if rollServ:FindFirstChild("RF") then
+                            if rollServ.RF:FindFirstChild("RollDice") then rollServ.RF.RollDice:InvokeServer() end
+                            if rollServ.RF:FindFirstChild("Roll") then rollServ.RF.Roll:InvokeServer() end
                         end
-                        if rollService:FindFirstChild("RE") then
-                            if rollService.RE:FindFirstChild("Roll") then rollService.RE.Roll:FireServer() end
-                            if rollService.RE:FindFirstChild("RollDice") then rollService.RE.RollDice:FireServer() end
+                        if rollServ:FindFirstChild("RE") then
+                            if rollServ.RE:FindFirstChild("Roll") then rollServ.RE.Roll:FireServer() end
+                            if rollServ.RE:FindFirstChild("RollDice") then rollServ.RE.RollDice:FireServer() end
                         end
                     end
-                    -- Cadangan langsung ke Network jika ada RF RollDice / Roll
-                    if network:FindFirstChild("RollDice") then
-                        if network.RollDice:IsA("RemoteFunction") then network.RollDice:InvokeServer()
-                        elseif network.RollDice:IsA("RemoteEvent") then network.RollDice:FireServer() end
-                    end
-                    if network:FindFirstChild("Roll") then
-                        if network.Roll:IsA("RemoteFunction") then network.Roll:InvokeServer()
-                        elseif network.Roll:IsA("RemoteEvent") then network.Roll:FireServer() end
+                end
+                
+                -- Metode 2: Simulasi klik tombol Roll di PlayerGui (paling ampuh kalau remote diblock)
+                local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+                if playerGui then
+                    for _, gui in pairs(playerGui:GetDescendants()) do
+                        if gui:IsA("TextButton") or gui:IsA("ImageButton") then
+                            local gName = gui.Name:lower()
+                            if gName == "roll" or gName == "rolldice" or gName:find("rollbutton") then
+                                for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
+                                    connection:Fire()
+                                end
+                            end
+                        end
                     end
                 end
             end)
@@ -383,7 +389,7 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     end)
 end)
 
--- Auto Collect Cash (Fixed: Menyapu semua kotak hijau tanpa teleport karakter)
+-- Auto Collect Cash (Menyapu semua kotak hijau sekaligus tanpa teleport)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
@@ -402,7 +408,7 @@ createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
                     end
                 end
             end)
-            task.wait(0.4)
+            task.wait(0.3)
         end
     end)
 end)
@@ -644,7 +650,7 @@ local function sendWebhook(url, itemName, itemRarity)
         ["content"] = "@everyone Hoki Besar! Dapat item langka!",
         ["embeds"] = {{
             ["title"] = "⭐ Exzet Hub - Drop Alert",
-            ["description"] = "**Player:** " + LocalPlayer.Name + "\n**Item:** " + itemName + "\n**Rarity:** `" + itemRarity + "`",
+            ["description"] = "**Player:** " .. LocalPlayer.Name .. "\n**Item:** " .. itemName .. "\n**Rarity:** `" .. itemRarity .. "`",
             ["color"] = 16766720,
             ["footer"] = {["text"] = "Anime Dice - Auto Notifier"}
         }}
