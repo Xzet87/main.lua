@@ -1,6 +1,5 @@
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -92,7 +91,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 280, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub v1.5 (Anime Dice - Fixed)"
+Title.Text = "Exzet Hub v1.6 (Anime Dice - Touch Fix)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -304,7 +303,7 @@ ShopTabBtn.MouseButton1Click:Connect(function() switchTab(ShopTabBtn, ShopPage) 
 MiscTabBtn.MouseButton1Click:Connect(function() switchTab(MiscTabBtn, MiscPage) end)
 
 -------------------------------------------------------------------
--- HELPER FUNGSI TOGGLE (DENGAN FIX STATE OFF TOTAL)
+-- HELPER FUNGSI TOGGLE
 -------------------------------------------------------------------
 local activeFeatures = {}
 
@@ -370,24 +369,35 @@ createFeatureToggle(MainPage, "Auto Roll Dice", function(state, isRunning)
     end)
 end)
 
--- Auto Collect Cash (Fixed via RemoteEvent CollectBalance)
+-- Auto Collect Cash (Fixed: Menyentuh/menginjak kotak hijau collector di map secara otomatis)
 createFeatureToggle(MainPage, "Auto Collect Cash", function(state, isRunning)
     if not state then return end
     task.spawn(function()
         while isRunning() do
             pcall(function()
-                local network = ReplicatedStorage:FindFirstChild("Network")
-                if network and network:FindFirstChild("PlotService") then
-                    local plotService = network.PlotService
-                    if plotService:FindFirstChild("RE") and plotService.RE:FindFirstChild("CollectBalance") then
-                        plotService.RE.CollectBalance:FireServer()
-                    end
-                    if plotService:FindFirstChild("RF") and plotService.RF:FindFirstChild("CollectBalance") then
-                        plotService.RF.CollectBalance:InvokeServer()
+                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    for _, obj in pairs(Workspace:GetDescendants()) do
+                        if obj:IsA("BasePart") then
+                            local name = obj.Name:lower()
+                            -- Deteksi kotak hijau tempat kumpul cash/income di game
+                            if name:find("collect") or name:find("cash") or name:find("money") or name:find("balance") or (obj.Color and obj.Color.G > 0.5 and obj.Color.R < 0.3) then
+                                local oldPos = hrp.CFrame
+                                hrp.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+                                task.wait(0.05)
+                                if firetouchinterest then
+                                    firetouchinterest(hrp, obj, 0)
+                                    firetouchinterest(hrp, obj, 1)
+                                end
+                                task.wait(0.1)
+                                hrp.CFrame = oldPos
+                                break
+                            end
+                        end
                     end
                 end
             end)
-            task.wait(1)
+            task.wait(1.5)
         end
     end)
 end)
