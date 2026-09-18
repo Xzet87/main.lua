@@ -1,7 +1,5 @@
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
@@ -24,7 +22,7 @@ MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -145)
-MainFrame.Size = UDim2.new(0, 320, 0, 310)
+MainFrame.Size = UDim2.new(0, 320, 0, 200) -- Disesuaikan ukurannya karena fiturnya dikurangi
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -63,18 +61,18 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Ontop"
+Title.Text = "Exzet Hub - Egg Farm"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- CONTAINER UTAMA (UNTUK EFEK MINIMIZE)
+-- CONTAINER UTAMA
 local ContentContainer = Instance.new("ScrollingFrame")
 ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 15, 0, 50)
 ContentContainer.Size = UDim2.new(1, -30, 1, -60)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 400) -- Diperbesar sedikit muat tombol baru
+ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 150)
 ContentContainer.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -124,237 +122,110 @@ MinBtn.MouseButton1Click:Connect(function()
         MainFrame.Size = UDim2.new(0, 320, 0, 38)
         MinBtn.Text = "+"
     else
-        MainFrame.Size = UDim2.new(0, 320, 0, 310)
+        MainFrame.Size = UDim2.new(0, 320, 0, 200)
         MinBtn.Text = "-"
     end
 end)
 
 -------------------------------------------------------------------
--- 1. WALKSPEED & NOCLIP (TEMBUS TEMBOK / BARRIER)
+-- INPUT ID EGG & TOMBOL AUTO PICKUP / PLANT
 -------------------------------------------------------------------
-local speedBox = Instance.new("TextBox")
-speedBox.Size = UDim2.new(1, 0, 0, 32)
-speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-speedBox.Font = Enum.Font.GothamMedium
-speedBox.PlaceholderText = "WalkSpeed (default 16)"
-speedBox.Text = "16"
-speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedBox.TextSize = 12
-speedBox.Parent = ContentContainer
+local eggIdBox = Instance.new("TextBox")
+eggIdBox.Size = UDim2.new(1, 0, 0, 32)
+eggIdBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+eggIdBox.Font = Enum.Font.GothamMedium
+eggIdBox.PlaceholderText = "Masukkan ID Egg dari SimpleSpy"
+eggIdBox.Text = "196196d7-c709-41b5-812f-7cbe9be98d9a"
+eggIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+eggIdBox.TextSize = 12
+eggIdBox.Parent = ContentContainer
 
-local sbCorner = Instance.new("UICorner")
-sbCorner.CornerRadius = UDim.new(0, 6)
-sbCorner.Parent = speedBox
+local ebCorner = Instance.new("UICorner")
+ebCorner.CornerRadius = UDim.new(0, 6)
+ebCorner.Parent = eggIdBox
 
-local speedActive = false
-local speedBtn = Instance.new("TextButton")
-speedBtn.Size = UDim2.new(1, 0, 0, 32)
-speedBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-speedBtn.Font = Enum.Font.GothamBold
-speedBtn.Text = "Custom WalkSpeed : OFF"
-speedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-speedBtn.TextSize = 12
-speedBtn.Parent = ContentContainer
+-- Auto Egg Pickup Toggle
+local autoPickupActive = false
+local autoPickupBtn = Instance.new("TextButton")
+autoPickupBtn.Size = UDim2.new(1, 0, 0, 32)
+autoPickupBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+autoPickupBtn.Font = Enum.Font.GothamBold
+autoPickupBtn.Text = "Auto Egg Pickup : OFF"
+autoPickupBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoPickupBtn.TextSize = 12
+autoPickupBtn.Parent = ContentContainer
 
-local sbBtnCorner = Instance.new("UICorner")
-sbBtnCorner.CornerRadius = UDim.new(0, 6)
-sbBtnCorner.Parent = speedBtn
+local apCorner = Instance.new("UICorner")
+apCorner.CornerRadius = UDim.new(0, 6)
+apCorner.Parent = autoPickupBtn
 
-speedBtn.MouseButton1Click:Connect(function()
-    speedActive = not speedActive
-    if speedActive then
-        speedBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        speedBtn.Text = "Custom WalkSpeed : ON"
+autoPickupBtn.MouseButton1Click:Connect(function()
+    autoPickupActive = not autoPickupActive
+    if autoPickupActive then
+        autoPickupBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        autoPickupBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoPickupBtn.Text = "Auto Egg Pickup : ON"
     else
-        speedBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        speedBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        speedBtn.Text = "Custom WalkSpeed : OFF"
+        autoPickupBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        autoPickupBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        autoPickupBtn.Text = "Auto Egg Pickup : OFF"
     end
 end)
 
--- Noclip Toggle (Tembus Barrier/Tembok tanpa error catch)
-local noclipActive = false
-local noclipBtn = Instance.new("TextButton")
-noclipBtn.Size = UDim2.new(1, 0, 0, 32)
-noclipBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-noclipBtn.Font = Enum.Font.GothamBold
-noclipBtn.Text = "Noclip (Tembus Tembok) : OFF"
-noclipBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-noclipBtn.TextSize = 12
-noclipBtn.Parent = ContentContainer
+-- Auto Plant Hint (Simpan ke base) Toggle
+local autoPlantActive = false
+local autoPlantBtn = Instance.new("TextButton")
+autoPlantBtn.Size = UDim2.new(1, 0, 0, 32)
+autoPlantBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+autoPlantBtn.Font = Enum.Font.GothamBold
+autoPlantBtn.Text = "Auto Plant / Save Egg : OFF"
+autoPlantBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoPlantBtn.TextSize = 12
+autoPlantBtn.Parent = ContentContainer
 
-local ncBtnCorner = Instance.new("UICorner")
-ncBtnCorner.CornerRadius = UDim.new(0, 6)
-ncBtnCorner.Parent = noclipBtn
+local aptCorner = Instance.new("UICorner")
+aptCorner.CornerRadius = UDim.new(0, 6)
+aptCorner.Parent = autoPlantBtn
 
-noclipBtn.MouseButton1Click:Connect(function()
-    noclipActive = not noclipActive
-    if noclipActive then
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        noclipBtn.Text = "Noclip (Tembus Tembok) : ON"
+autoPlantBtn.MouseButton1Click:Connect(function()
+    autoPlantActive = not autoPlantActive
+    if autoPlantActive then
+        autoPlantBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        autoPlantBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoPlantBtn.Text = "Auto Plant / Save Egg : ON"
     else
-        noclipBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        noclipBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        noclipBtn.Text = "Noclip (Tembus Tembok) : OFF"
+        autoPlantBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        autoPlantBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        autoPlantBtn.Text = "Auto Plant / Save Egg : OFF"
     end
 end)
 
-RunService.Stepped:Connect(function()
-    pcall(function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if speedActive then
-                local spd = tonumber(speedBox.Text) or 16
-                LocalPlayer.Character.Humanoid.WalkSpeed = spd
-            end
-            
-            if noclipActive then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end
-    end)
-end)
-
 -------------------------------------------------------------------
--- 2. JUMPHEIGHT SETTINGS
+-- BACKGROUND LOOPS
 -------------------------------------------------------------------
-local jumpBox = Instance.new("TextBox")
-jumpBox.Size = UDim2.new(1, 0, 0, 32)
-jumpBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-jumpBox.Font = Enum.Font.GothamMedium
-jumpBox.PlaceholderText = "JumpHeight (default 7.2)"
-jumpBox.Text = "7.2"
-jumpBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-jumpBox.TextSize = 12
-jumpBox.Parent = ContentContainer
-
-local jbCorner = Instance.new("UICorner")
-jbCorner.CornerRadius = UDim.new(0, 6)
-jbCorner.Parent = jumpBox
-
-local jumpActive = false
-local jumpBtn = Instance.new("TextButton")
-jumpBtn.Size = UDim2.new(1, 0, 0, 32)
-jumpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-jumpBtn.Font = Enum.Font.GothamBold
-jumpBtn.Text = "Custom JumpHeight : OFF"
-jumpBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-jumpBtn.TextSize = 12
-jumpBtn.Parent = ContentContainer
-
-local jbBtnCorner = Instance.new("UICorner")
-jbBtnCorner.CornerRadius = UDim.new(0, 6)
-jbBtnCorner.Parent = jumpBtn
-
-jumpBtn.MouseButton1Click:Connect(function()
-    jumpActive = not jumpActive
-    if jumpActive then
-        jumpBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        jumpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        jumpBtn.Text = "Custom JumpHeight : ON"
-    else
-        jumpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        jumpBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        jumpBtn.Text = "Custom JumpHeight : OFF"
-    end
-end)
-
+-- Loop untuk EggPickup
 task.spawn(function()
     while true do
-        pcall(function()
-            if jumpActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                local hum = LocalPlayer.Character.Humanoid
-                hum.UseJumpPower = false
-                local jmp = tonumber(jumpBox.Text) or 7.2
-                hum.JumpHeight = jmp
-            end
-        end)
-        task.wait(0.1)
-    end
-end)
-
--------------------------------------------------------------------
--- 3. INFINITE JUMP
--------------------------------------------------------------------
-local infJumpActive = false
-local infJumpBtn = Instance.new("TextButton")
-infJumpBtn.Size = UDim2.new(1, 0, 0, 32)
-infJumpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-infJumpBtn.Font = Enum.Font.GothamBold
-infJumpBtn.Text = "Infinite Jump : OFF"
-infJumpBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-infJumpBtn.TextSize = 12
-infJumpBtn.Parent = ContentContainer
-
-local ijCorner = Instance.new("UICorner")
-ijCorner.CornerRadius = UDim.new(0, 6)
-ijCorner.Parent = infJumpBtn
-
-infJumpBtn.MouseButton1Click:Connect(function()
-    infJumpActive = not infJumpActive
-    if infJumpActive then
-        infJumpBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        infJumpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        infJumpBtn.Text = "Infinite Jump : ON"
-    else
-        infJumpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        infJumpBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        infJumpBtn.Text = "Infinite Jump : OFF"
-    end
-end)
-
-UserInputService.JumpRequest:Connect(function()
-    if infJumpActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--------------------------------------------------------------------
--- 4. AUTO COLLECT PET (FITUR BARU)
--------------------------------------------------------------------
-local autoCollectActive = false
-local autoCollectBtn = Instance.new("TextButton")
-autoCollectBtn.Size = UDim2.new(1, 0, 0, 32)
-autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-autoCollectBtn.Font = Enum.Font.GothamBold
-autoCollectBtn.Text = "Auto Collect Pet : OFF"
-autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-autoCollectBtn.TextSize = 12
-autoCollectBtn.Parent = ContentContainer
-
-local acCorner = Instance.new("UICorner")
-acCorner.CornerRadius = UDim.new(0, 6)
-acCorner.Parent = autoCollectBtn
-
-autoCollectBtn.MouseButton1Click:Connect(function()
-    autoCollectActive = not autoCollectActive
-    if autoCollectActive then
-        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        autoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        autoCollectBtn.Text = "Auto Collect Pet : ON"
-    else
-        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        autoCollectBtn.Text = "Auto Collect Pet : OFF"
-    end
-end)
-
--- Loop pengecekan Auto Collect
-task.spawn(function()
-    while true do
-        if autoCollectActive then
+        if autoPickupActive then
             pcall(function()
                 local args = {
-                    [1] = "b5a120a9-3104-4e91-8eba-7efdab54e861"
+                    [1] = eggIdBox.Text
                 }
-                ReplicatedStorage.Remotes.Game.PetCollect:FireServer(unpack(args))
+                ReplicatedStorage.Remotes.Game.EggPickup:FireServer(unpack(args))
             end)
         end
-        task.wait(0.5) -- Jeda waktu eksekusi remote agar tidak crash/lag
+        task.wait(0.5)
+    end
+end)
+
+-- Loop untuk PlantHint
+task.spawn(function()
+    while true do
+        if autoPlantActive then
+            pcall(function()
+                ReplicatedStorage.Remotes.Game.PlantHint:FireServer()
+            end)
+        end
+        task.wait(0.5)
     end
 end)
