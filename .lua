@@ -1,6 +1,7 @@
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 -- Clean Old GUI
@@ -22,7 +23,7 @@ MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -145)
-MainFrame.Size = UDim2.new(0, 320, 0, 200) -- Disesuaikan ukurannya karena fiturnya dikurangi
+MainFrame.Size = UDim2.new(0, 320, 0, 180)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -61,7 +62,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Exzet Hub - Egg Farm"
+Title.Text = "Exzet Hub - Auto Egg"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -72,7 +73,7 @@ ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 15, 0, 50)
 ContentContainer.Size = UDim2.new(1, -30, 1, -60)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 150)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 120)
 ContentContainer.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -122,63 +123,50 @@ MinBtn.MouseButton1Click:Connect(function()
         MainFrame.Size = UDim2.new(0, 320, 0, 38)
         MinBtn.Text = "+"
     else
-        MainFrame.Size = UDim2.new(0, 320, 0, 200)
+        MainFrame.Size = UDim2.new(0, 320, 0, 180)
         MinBtn.Text = "-"
     end
 end)
 
 -------------------------------------------------------------------
--- INPUT ID EGG & TOMBOL AUTO PICKUP / PLANT
+-- TOMBOL OTOMATIS AUTO COLLECT & PLANT
 -------------------------------------------------------------------
-local eggIdBox = Instance.new("TextBox")
-eggIdBox.Size = UDim2.new(1, 0, 0, 32)
-eggIdBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-eggIdBox.Font = Enum.Font.GothamMedium
-eggIdBox.PlaceholderText = "Masukkan ID Egg dari SimpleSpy"
-eggIdBox.Text = "196196d7-c709-41b5-812f-7cbe9be98d9a"
-eggIdBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-eggIdBox.TextSize = 12
-eggIdBox.Parent = ContentContainer
 
-local ebCorner = Instance.new("UICorner")
-ebCorner.CornerRadius = UDim.new(0, 6)
-ebCorner.Parent = eggIdBox
+-- Auto Collect Egg Toggle
+local autoCollectActive = false
+local autoCollectBtn = Instance.new("TextButton")
+autoCollectBtn.Size = UDim2.new(1, 0, 0, 32)
+autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+autoCollectBtn.Font = Enum.Font.GothamBold
+autoCollectBtn.Text = "Auto Collect Eggs : OFF"
+autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoCollectBtn.TextSize = 12
+autoCollectBtn.Parent = ContentContainer
 
--- Auto Egg Pickup Toggle
-local autoPickupActive = false
-local autoPickupBtn = Instance.new("TextButton")
-autoPickupBtn.Size = UDim2.new(1, 0, 0, 32)
-autoPickupBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-autoPickupBtn.Font = Enum.Font.GothamBold
-autoPickupBtn.Text = "Auto Egg Pickup : OFF"
-autoPickupBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-autoPickupBtn.TextSize = 12
-autoPickupBtn.Parent = ContentContainer
+local acCorner = Instance.new("UICorner")
+acCorner.CornerRadius = UDim.new(0, 6)
+acCorner.Parent = autoCollectBtn
 
-local apCorner = Instance.new("UICorner")
-apCorner.CornerRadius = UDim.new(0, 6)
-apCorner.Parent = autoPickupBtn
-
-autoPickupBtn.MouseButton1Click:Connect(function()
-    autoPickupActive = not autoPickupActive
-    if autoPickupActive then
-        autoPickupBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-        autoPickupBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        autoPickupBtn.Text = "Auto Egg Pickup : ON"
+autoCollectBtn.MouseButton1Click:Connect(function()
+    autoCollectActive = not autoCollectActive
+    if autoCollectActive then
+        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        autoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoCollectBtn.Text = "Auto Collect Eggs : ON"
     else
-        autoPickupBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-        autoPickupBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        autoPickupBtn.Text = "Auto Egg Pickup : OFF"
+        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        autoCollectBtn.Text = "Auto Collect Eggs : OFF"
     end
 end)
 
--- Auto Plant Hint (Simpan ke base) Toggle
+-- Auto Plant Toggle
 local autoPlantActive = false
 local autoPlantBtn = Instance.new("TextButton")
 autoPlantBtn.Size = UDim2.new(1, 0, 0, 32)
 autoPlantBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 autoPlantBtn.Font = Enum.Font.GothamBold
-autoPlantBtn.Text = "Auto Plant / Save Egg : OFF"
+autoPlantBtn.Text = "Auto Plant / Save : OFF"
 autoPlantBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 autoPlantBtn.TextSize = 12
 autoPlantBtn.Parent = ContentContainer
@@ -192,33 +180,41 @@ autoPlantBtn.MouseButton1Click:Connect(function()
     if autoPlantActive then
         autoPlantBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
         autoPlantBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        autoPlantBtn.Text = "Auto Plant / Save Egg : ON"
+        autoPlantBtn.Text = "Auto Plant / Save : ON"
     else
         autoPlantBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
         autoPlantBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        autoPlantBtn.Text = "Auto Plant / Save Egg : OFF"
+        autoPlantBtn.Text = "Auto Plant / Save : OFF"
     end
 end)
 
 -------------------------------------------------------------------
--- BACKGROUND LOOPS
+-- BACKGROUND AUTOMATIC LOOPS
 -------------------------------------------------------------------
--- Loop untuk EggPickup
+
+-- Loop Scan Folder Workspace untuk mengambil semua telur otomatis
 task.spawn(function()
     while true do
-        if autoPickupActive then
+        if autoCollectActive then
             pcall(function()
-                local args = {
-                    [1] = eggIdBox.Text
-                }
-                ReplicatedStorage.Remotes.Game.EggPickup:FireServer(unpack(args))
+                -- Sesuaikan nama folder tempat telur berada di Workspace (misal: "Eggs" atau "EggSpawns")
+                local targetFolder = Workspace:FindFirstChild("Eggs") or Workspace:FindFirstChild("EggSpawns")
+                if targetFolder then
+                    for _, egg in pairs(targetFolder:GetChildren()) do
+                        -- Mengambil nama/ID objek telur secara otomatis sebagai argumen
+                        local args = {
+                            [1] = egg.Name
+                        }
+                        ReplicatedStorage.Remotes.Game.EggPickup:FireServer(unpack(args))
+                    end
+                end
             end)
         end
         task.wait(0.5)
     end
 end)
 
--- Loop untuk PlantHint
+-- Loop untuk PlantHint otomatis
 task.spawn(function()
     while true do
         if autoPlantActive then
