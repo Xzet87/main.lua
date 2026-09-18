@@ -2,6 +2,7 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 -- Clean Old GUI
@@ -73,7 +74,7 @@ ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 15, 0, 50)
 ContentContainer.Size = UDim2.new(1, -30, 1, -60)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 300)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 400) -- Diperbesar sedikit muat tombol baru
 ContentContainer.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -200,7 +201,6 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Eksekusi WalkSpeed & Noclip secara aman per frame
 RunService.Stepped:Connect(function()
     pcall(function()
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -311,5 +311,50 @@ end)
 UserInputService.JumpRequest:Connect(function()
     if infJumpActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-------------------------------------------------------------------
+-- 4. AUTO COLLECT PET (FITUR BARU)
+-------------------------------------------------------------------
+local autoCollectActive = false
+local autoCollectBtn = Instance.new("TextButton")
+autoCollectBtn.Size = UDim2.new(1, 0, 0, 32)
+autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+autoCollectBtn.Font = Enum.Font.GothamBold
+autoCollectBtn.Text = "Auto Collect Pet : OFF"
+autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoCollectBtn.TextSize = 12
+autoCollectBtn.Parent = ContentContainer
+
+local acCorner = Instance.new("UICorner")
+acCorner.CornerRadius = UDim.new(0, 6)
+acCorner.Parent = autoCollectBtn
+
+autoCollectBtn.MouseButton1Click:Connect(function()
+    autoCollectActive = not autoCollectActive
+    if autoCollectActive then
+        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        autoCollectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoCollectBtn.Text = "Auto Collect Pet : ON"
+    else
+        autoCollectBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        autoCollectBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        autoCollectBtn.Text = "Auto Collect Pet : OFF"
+    end
+end)
+
+-- Loop pengecekan Auto Collect
+task.spawn(function()
+    while true do
+        if autoCollectActive then
+            pcall(function()
+                local args = {
+                    [1] = "b5a120a9-3104-4e91-8eba-7efdab54e861"
+                }
+                ReplicatedStorage.Remotes.Game.PetCollect:FireServer(unpack(args))
+            end)
+        end
+        task.wait(0.5) -- Jeda waktu eksekusi remote agar tidak crash/lag
     end
 end)
