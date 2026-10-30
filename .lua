@@ -23,7 +23,7 @@ MainFrame.Parent = ExzetHubUI
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BackgroundTransparency = 0.15
 MainFrame.Position = UDim2.new(0.5, -160, 0.5, -145)
-MainFrame.Size = UDim2.new(0, 320, 0, 180)
+MainFrame.Size = UDim2.new(0, 320, 0, 225) -- Diperpanjang sedikit agar muat 3 tombol
 MainFrame.Active = true
 MainFrame.Draggable = true
 
@@ -73,7 +73,7 @@ ContentContainer.Parent = MainFrame
 ContentContainer.BackgroundTransparency = 1
 ContentContainer.Position = UDim2.new(0, 15, 0, 50)
 ContentContainer.Size = UDim2.new(1, -30, 1, -60)
-ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 120)
+ContentContainer.CanvasSize = UDim2.new(0, 0, 0, 165)
 ContentContainer.ScrollBarThickness = 4
 
 local UIListLayout = Instance.new("UIListLayout")
@@ -123,7 +123,7 @@ MinBtn.MouseButton1Click:Connect(function()
         MainFrame.Size = UDim2.new(0, 320, 0, 38)
         MinBtn.Text = "+"
     else
-        MainFrame.Size = UDim2.new(0, 320, 0, 180)
+        MainFrame.Size = UDim2.new(0, 320, 0, 225)
         MinBtn.Text = "-"
     end
 end)
@@ -189,6 +189,36 @@ autoPlantBtn.MouseButton1Click:Connect(function()
 end)
 
 -------------------------------------------------------------------
+-- TOMBOL BARU: AUTO CHANGE ASTRAL CAGE -> OMEGA CAGE
+-------------------------------------------------------------------
+local autoChangeCageActive = false
+local autoChangeCageBtn = Instance.new("TextButton")
+autoChangeCageBtn.Size = UDim2.new(1, 0, 0, 32)
+autoChangeCageBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+autoChangeCageBtn.Font = Enum.Font.GothamBold
+autoChangeCageBtn.Text = "Auto Cage Swap : OFF"
+autoChangeCageBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+autoChangeCageBtn.TextSize = 12
+autoChangeCageBtn.Parent = ContentContainer
+
+local accCorner = Instance.new("UICorner")
+accCorner.CornerRadius = UDim.new(0, 6)
+accCorner.Parent = autoChangeCageBtn
+
+autoChangeCageBtn.MouseButton1Click:Connect(function()
+    autoChangeCageActive = not autoChangeCageActive
+    if autoChangeCageActive then
+        autoChangeCageBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+        autoChangeCageBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        autoChangeCageBtn.Text = "Auto Cage Swap : ON"
+    else
+        autoChangeCageBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+        autoChangeCageBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        autoChangeCageBtn.Text = "Auto Cage Swap : OFF"
+    end
+end)
+
+-------------------------------------------------------------------
 -- BACKGROUND AUTOMATIC LOOPS
 -------------------------------------------------------------------
 
@@ -197,11 +227,9 @@ task.spawn(function()
     while true do
         if autoCollectActive then
             pcall(function()
-                -- Sesuaikan nama folder tempat telur berada di Workspace (misal: "Eggs" atau "EggSpawns")
                 local targetFolder = Workspace:FindFirstChild("Eggs") or Workspace:FindFirstChild("EggSpawns")
                 if targetFolder then
                     for _, egg in pairs(targetFolder:GetChildren()) do
-                        -- Mengambil nama/ID objek telur secara otomatis sebagai argumen
                         local args = {
                             [1] = egg.Name
                         }
@@ -220,6 +248,38 @@ task.spawn(function()
         if autoPlantActive then
             pcall(function()
                 ReplicatedStorage.Remotes.Game.PlantHint:FireServer()
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- Loop otomatis mengubah/mereplace AstralCage menjadi OmegaCage di Path20
+task.spawn(function()
+    while true do
+        if autoChangeCageActive then
+            pcall(function()
+                local path = Workspace:FindFirstChild("Paths") 
+                    and Workspace.Paths:FindFirstChild("Path20") 
+                    and Workspace.Paths.Path20:FindFirstChild("Cages")
+
+                if path then
+                    local astralCage = path:FindFirstChild("AstralCage")
+                    if astralCage then
+                        -- Jika ingin sekadar ganti nama:
+                        astralCage.Name = "OmegaCage"
+                        
+                        -- Atau jika ingin diganti clone dari ReplicatedStorage (bisa aktifkan baris bawah ini jika OmegaCage adalah model asset di ReplicatedStorage):
+                        -- local omegaPrefab = ReplicatedStorage:FindFirstChild("OmegaCage")
+                        -- if omegaPrefab then
+                        --     local cf = astralCage:IsA("Model") and astralCage:GetPivot() or astralCage.CFrame
+                        --     local newCage = omegaPrefab:Clone()
+                        --     newCage.Parent = path
+                        --     if newCage:IsA("Model") then newCage:PivotTo(cf) else newCage.CFrame = cf end
+                        --     astralCage:Destroy()
+                        -- end
+                    end
+                end
             end)
         end
         task.wait(0.5)
